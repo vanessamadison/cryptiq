@@ -9,6 +9,7 @@ venv/
 # Node
 node_modules/
 .next/
+.vercel/
 
 # Environment
 .env
