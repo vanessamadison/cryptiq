@@ -9,6 +9,7 @@ export default function AuthClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const mode = useMemo(() => searchParams.get("mode") || "login", [searchParams]);
+  const nextPath = useMemo(() => searchParams.get("next") || "", [searchParams]);
   const isRegister = mode === "register";
 
   const [email, setEmail] = useState("");
@@ -31,7 +32,7 @@ export default function AuthClient() {
         body: JSON.stringify(payload),
       });
       setToken(data.token);
-      router.push("/chat");
+      router.push(nextPath || "/chat");
     } catch (err: any) {
       setError(err.message || "Authentication failed");
     } finally {
@@ -47,8 +48,11 @@ export default function AuthClient() {
           <div className="meta">Secure Identity</div>
         </Link>
         <div className="cta-row">
-          <Link className="button secondary" href={isRegister ? "/auth" : "/auth?mode=register"}>
-            {isRegister ? "Sign in" : "Create account"}
+          <Link
+            className="button secondary"
+            href={isRegister ? `/auth${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ""}` : `/auth?mode=register${nextPath ? `&next=${encodeURIComponent(nextPath)}` : ""}`}
+          >
+            {isRegister ? "Sign In" : "Create Account"}
           </Link>
         </div>
       </nav>
@@ -88,7 +92,7 @@ export default function AuthClient() {
             />
             {error && <div className="notice">{error}</div>}
             <button className="button" disabled={loading}>
-              {loading ? "Processing..." : isRegister ? "Create account" : "Sign in"}
+              {loading ? "Processing..." : isRegister ? "Create Account" : "Sign In"}
             </button>
           </form>
         </section>

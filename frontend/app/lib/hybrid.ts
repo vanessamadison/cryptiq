@@ -25,10 +25,15 @@ export async function isHybridSupported() {
       return false;
     }
     await getKem();
-    await crypto.subtle.generateKey(
+    const keypair = await crypto.subtle.generateKey(
       { name: "X25519", namedCurve: "X25519" },
       true,
       ["deriveBits"]
+    );
+    await crypto.subtle.deriveBits(
+      { name: "X25519", public: keypair.publicKey },
+      keypair.privateKey,
+      256
     );
     hybridSupportedCache = true;
     return true;

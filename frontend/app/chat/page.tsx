@@ -33,7 +33,7 @@ export default function ChatPage() {
     } catch (err: any) {
       if (err.message === "unauthorized") {
         clearToken();
-        router.push("/auth");
+        router.push(`/auth?next=${encodeURIComponent("/chat")}`);
         return;
       }
       setError(err.message || "Unable to load");
@@ -88,7 +88,7 @@ export default function ChatPage() {
         </Link>
         <div className="cta-row">
           <button className="button secondary" onClick={handleSignOut}>
-            Sign out
+            Sign Out
           </button>
         </div>
       </nav>
@@ -122,7 +122,7 @@ export default function ChatPage() {
                 placeholder="Room name"
               />
               <button className="button" onClick={handleCreate}>
-                Create room
+                Create Room
               </button>
             </div>
           </div>
@@ -136,7 +136,7 @@ export default function ChatPage() {
                 placeholder="Room ID"
               />
               <button className="button secondary" onClick={handleJoin}>
-                Join room
+                Join Room
               </button>
             </div>
           </div>

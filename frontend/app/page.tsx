@@ -10,10 +10,10 @@ export default function HomePage() {
         </div>
         <div className="cta-row">
           <Link className="button secondary" href="/auth">
-            Sign in
+            Sign In
           </Link>
           <Link className="button" href="/auth?mode=register">
-            Create account
+            Create Account
           </Link>
         </div>
       </nav>
@@ -28,11 +28,11 @@ export default function HomePage() {
           </p>
           <div className="cta-row">
             <Link className="button" href="/chat">
-              Launch Secure Chat
-            </Link>
-            <Link className="button secondary" href="/auth?mode=register">
-              Create Identity
-            </Link>
+            Launch Secure Chat
+          </Link>
+          <Link className="button secondary" href="/auth?mode=register">
+            Create Identity
+          </Link>
           </div>
         </div>
 

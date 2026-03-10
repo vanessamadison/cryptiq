@@ -25,6 +25,23 @@ This version supports two modes for secure key exchange:
 
 ---
 
+## 𝘋𝘦𝘮𝘰 𝘍𝘭𝘰𝘸 (𝘛𝘦𝘴𝘵𝘪𝘯𝘨)
+
+**Tier 1 (Manual share, recommended for all browsers)**
+
+1. Create a room and generate a key in the Room Key Vault.
+2. Click **Copy Secure Link** and send it over a separate channel (Signal, iMessage, or in-person).
+3. On the second device, sign in, open the secure link, and the room will auto-join with the key loaded.
+4. Messages should decrypt immediately on both sides.
+
+**Tier 2 (PQC demo, Chromium only)**
+
+1. Use Chrome, Edge, or Brave on both devices. Safari does not support X25519 (required for the demo).
+2. Both clients click **Enable PQC Demo** to register PQC keys.
+3. The sender clicks **Share via PQC** to post an ML-KEM envelope.
+4. The recipient clicks **Accept PQC Envelope** to unlock the room key and join.
+5. Send encrypted messages as normal.
+
 ## 𝘒𝘦𝘺 𝘊𝘢𝘱𝘢𝘣𝘪𝘭𝘪𝘵𝘪𝘦𝘴
 
 * **Post-quantum alignment**

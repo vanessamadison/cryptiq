@@ -40,6 +40,8 @@ export default function RoomPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [pqcSupported, setPqcSupported] = useState(false);
+  const [pqcNote, setPqcNote] = useState<string | null>(null);
+  const [pqcUnsupportedLabel, setPqcUnsupportedLabel] = useState<string | null>(null);
   const [pqcEnabled, setPqcEnabled] = useState(false);
   const [profile, setProfile] = useState<{ id: string; display_name: string } | null>(null);
   const lastIdRef = useRef(0);
@@ -52,33 +54,66 @@ export default function RoomPage() {
         setProfile(data.user);
       } catch (err: any) {
         if (err.message === "unauthorized") {
-          router.push("/auth");
+          const key = searchParams.get("key");
+          const nextPath = key ? `/room/${roomId}?key=${encodeURIComponent(key)}` : `/room/${roomId}`;
+          router.push(`/auth?next=${encodeURIComponent(nextPath)}`);
         }
       }
     };
     loadProfile();
-  }, [router]);
+  }, [router, roomId, searchParams]);
+
+  const joinRoom = async () => {
+    try {
+      await apiFetch("/api/rooms/join", {
+        method: "POST",
+        body: JSON.stringify({ room_id: roomId }),
+      });
+    } catch {
+      // ignore join errors
+    }
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const queryKey = searchParams.get("key");
-    if (queryKey) {
-      window.localStorage.setItem(roomKeyStorage(roomId), queryKey);
-      setRoomKey(queryKey);
-      setRoomKeyInput("");
-      setNotice("Room key loaded from secure link.");
-      return;
-    }
-    const stored = window.localStorage.getItem(roomKeyStorage(roomId));
-    if (stored) {
-      setRoomKey(stored);
-    }
+    let active = true;
+    const hydrate = async () => {
+      const queryKey = searchParams.get("key");
+      if (queryKey) {
+        await joinRoom();
+        if (!active) return;
+        window.localStorage.setItem(roomKeyStorage(roomId), queryKey);
+        setRoomKey(queryKey);
+        setRoomKeyInput("");
+        setNotice("Room key loaded from secure link.");
+        setError(null);
+        return;
+      }
+      const stored = window.localStorage.getItem(roomKeyStorage(roomId));
+      if (stored) {
+        setRoomKey(stored);
+      }
+    };
+    hydrate();
+    return () => {
+      active = false;
+    };
   }, [roomId, searchParams]);
 
   useEffect(() => {
     const detect = async () => {
       const supported = await isHybridSupported();
       setPqcSupported(supported);
+      if (!supported && typeof navigator !== "undefined") {
+        const ua = navigator.userAgent.toLowerCase();
+        const isSafari = ua.includes("safari") && !ua.includes("chrome") && !ua.includes("crios") && !ua.includes("edg");
+        setPqcNote(
+          isSafari
+            ? "PQC demo requires Chromium (Chrome, Edge, Brave). Safari does not support X25519."
+            : "This browser does not support the PQC demo."
+        );
+        setPqcUnsupportedLabel(isSafari ? "Safari unsupported" : "PQC unsupported");
+      }
     };
     detect();
   }, []);
@@ -90,7 +125,12 @@ export default function RoomPage() {
       const cryptoKey = await deriveRoomKey(roomId, key);
       const items = await Promise.all(
         (data.messages || []).map(async (msg: Message) => {
-          const body = await decryptMessage(cryptoKey, msg.nonce, msg.ciphertext);
+          let body = "[Unable to decrypt]";
+          try {
+            body = await decryptMessage(cryptoKey, msg.nonce, msg.ciphertext);
+          } catch {
+            // keep placeholder
+          }
           return {
             id: msg.id,
             sender: msg.sender_name,
@@ -150,24 +190,29 @@ export default function RoomPage() {
     };
   }, [roomKey]);
 
-  const handleSaveKey = () => {
+  const handleSaveKey = async () => {
     if (!roomKeyInput.trim()) {
       setError("Enter a room key first.");
       return;
     }
     const value = roomKeyInput.trim();
     window.localStorage.setItem(roomKeyStorage(roomId), value);
+    await joinRoom();
     setRoomKey(value);
     setRoomKeyInput("");
     setError(null);
     setNotice("Room key saved to this device.");
   };
 
-  const handleGenerateKey = () => {
+  const handleGenerateKey = async () => {
     const bytes = crypto.getRandomValues(new Uint8Array(24));
     const key = btoa(String.fromCharCode(...bytes));
-    setRoomKeyInput(key);
-    setNotice("New room key generated. Click Save key.");
+    window.localStorage.setItem(roomKeyStorage(roomId), key);
+    await joinRoom();
+    setRoomKey(key);
+    setRoomKeyInput("");
+    setError(null);
+    setNotice("Room key generated and saved.");
   };
 
   const handleSend = async () => {
@@ -196,16 +241,22 @@ export default function RoomPage() {
     window.localStorage.removeItem(roomKeyStorage(roomId));
     setRoomKey(null);
     setPlainMessages([]);
+    setError(null);
+    setNotice("Room locked. Enter or generate a key to unlock.");
   };
 
   const handleCopyKey = async () => {
     if (!roomKey) return;
+    setError(null);
+    setNotice(null);
     await copyText(roomKey);
     setNotice("Room key copied. Share via a secure channel.");
   };
 
   const handleCopyLink = async () => {
     if (!roomKey) return;
+    setError(null);
+    setNotice(null);
     const link = buildRoomLink(roomId, roomKey);
     await copyText(link);
     setNotice("Secure link copied.");
@@ -236,9 +287,11 @@ export default function RoomPage() {
 
   const handleEnablePqc = async () => {
     if (!pqcSupported) {
-      setError("This browser does not support the PQC demo mode.");
+      setError(pqcNote || "This browser does not support the PQC demo mode.");
       return;
     }
+    setError(null);
+    setNotice(null);
     try {
       const keys = await ensurePqcKeys();
       await apiFetch("/api/keys/register", {
@@ -261,6 +314,8 @@ export default function RoomPage() {
       setError("Enable PQC demo first.");
       return;
     }
+    setError(null);
+    setNotice(null);
     try {
       const keys = await apiFetch(`/api/rooms/${roomId}/keys`);
       const envelopes = await Promise.all(
@@ -274,13 +329,15 @@ export default function RoomPage() {
             };
           })
       );
-      if (envelopes.length) {
-        await apiFetch(`/api/rooms/${roomId}/envelopes`, {
-          method: "POST",
-          body: JSON.stringify({ envelopes }),
-        });
-        setNotice("Room key shared via PQC envelope.");
+      if (!envelopes.length) {
+        setNotice("No recipients with PQC keys yet. Ask the other client to enable PQC demo first.");
+        return;
       }
+      await apiFetch(`/api/rooms/${roomId}/envelopes`, {
+        method: "POST",
+        body: JSON.stringify({ envelopes }),
+      });
+      setNotice("Room key shared via PQC envelope.");
     } catch (err: any) {
       setError(err.message || "Unable to share PQC envelope.");
     }
@@ -291,6 +348,8 @@ export default function RoomPage() {
       setError("Enable PQC demo first.");
       return;
     }
+    setError(null);
+    setNotice(null);
     try {
       const data = await apiFetch(`/api/rooms/${roomId}/envelopes`);
       if (!data.envelopes || data.envelopes.length === 0) {
@@ -307,6 +366,7 @@ export default function RoomPage() {
         env.wrapped_key
       );
       window.localStorage.setItem(roomKeyStorage(roomId), recovered);
+      await joinRoom();
       setRoomKey(recovered);
       setNotice("Room key unlocked via PQC envelope.");
     } catch (err: any) {
@@ -321,10 +381,10 @@ export default function RoomPage() {
     return (
       <div className="form" style={{ marginTop: 16 }}>
         <button className="button" onClick={handleCopyKey}>
-          Copy room key
+          Copy Key
         </button>
         <button className="button secondary" onClick={handleCopyLink}>
-          Copy secure link
+          Copy Secure Link
         </button>
         <div className="panel" style={{ marginTop: 12 }}>
           <p className="hero-subtitle">
@@ -345,10 +405,17 @@ export default function RoomPage() {
         </Link>
         <div className="cta-row">
           <button className="button secondary" onClick={handleLock}>
-            Lock room
+            Lock Room
           </button>
         </div>
       </nav>
+
+      {(notice || error) && (
+        <div className="grid" style={{ marginBottom: 18 }}>
+          {notice && <div className="status success">{notice}</div>}
+          {error && <div className="status error">{error}</div>}
+        </div>
+      )}
 
       <div className="chat-layout">
         <aside className="chat-sidebar">
@@ -366,10 +433,10 @@ export default function RoomPage() {
                 type="password"
               />
               <button className="button" onClick={handleSaveKey}>
-                Save key
+                Save Key
               </button>
               <button className="button secondary" onClick={handleGenerateKey}>
-                Generate key
+                Generate Key
               </button>
             </div>
             {roomKey && <div className="badge" style={{ marginTop: 16 }}>Key unlocked</div>}
@@ -381,17 +448,20 @@ export default function RoomPage() {
             <p className="hero-subtitle">
               {pqcSupported
                 ? "Enable PQC demo to share the room key using ML-KEM envelopes."
-                : "PQC demo is not supported in this browser. Use manual sharing."}
+                : pqcNote || "PQC demo is not supported in this browser. Use manual sharing."}
             </p>
+            {!pqcSupported && pqcUnsupportedLabel && (
+              <div className="badge" style={{ marginTop: 12 }}>{pqcUnsupportedLabel}</div>
+            )}
             <div className="form" style={{ marginTop: 16 }}>
               <button className="button" onClick={handleEnablePqc} disabled={!pqcSupported || pqcEnabled}>
-                {pqcEnabled ? "PQC demo enabled" : "Enable PQC demo"}
+                {pqcEnabled ? "PQC Demo Enabled" : "Enable PQC Demo"}
               </button>
               <button className="button secondary" onClick={handleSharePqc} disabled={!pqcEnabled || !roomKey}>
                 Share via PQC
               </button>
               <button className="button secondary" onClick={handleAcceptPqc} disabled={!pqcEnabled}>
-                Accept PQC envelope
+                Accept PQC Envelope
               </button>
             </div>
           </div>
@@ -426,8 +496,6 @@ export default function RoomPage() {
                 {loading ? "Sending" : "Send"}
               </button>
             </div>
-            {notice && <div className="badge" style={{ marginTop: 12 }}>{notice}</div>}
-            {error && <div className="notice" style={{ marginTop: 12 }}>{error}</div>}
           </div>
         </section>
       </div>
