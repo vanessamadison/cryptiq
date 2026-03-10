@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch, clearToken } from "../lib/api";
-import { ensureDeviceKeys } from "../lib/device";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +30,6 @@ export default function ChatPage() {
       setRooms(roomsRes.rooms || []);
       const pqcRes = await apiFetch("/api/pqc/status");
       setPqcStatus(pqcRes);
-      await ensureDeviceKeys();
     } catch (err: any) {
       if (err.message === "unauthorized") {
         clearToken();
@@ -108,10 +106,10 @@ export default function ChatPage() {
             <p className="hero-subtitle">
               {pqcStatus?.oqs_available
                 ? `Server liboqs ready · ${pqcStatus.kem_algorithm || "ML-KEM"} + ${pqcStatus.signature_algorithm || "ML-DSA"}`
-                : "Server liboqs not detected. Hybrid key share runs in browser."}
+                : "Server liboqs not detected. Manual key sharing is active."}
             </p>
             <div className="badge" style={{ marginTop: 12 }}>
-              ML-KEM · X25519 · AES-GCM
+              ML-KEM · AES-GCM
             </div>
           </div>
           <div className="panel">

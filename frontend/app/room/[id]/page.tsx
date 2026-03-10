@@ -5,9 +5,6 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch, getApiBase, getToken } from "../../lib/api";
 import { decryptMessage, deriveRoomKey, encryptMessage } from "../../lib/crypto";
-import { createEnvelope, openEnvelope, isHybridSupported } from "../../lib/hybrid";
-import { ensureDeviceKeys, getPrivateKeys } from "../../lib/device";
-import { unwrapSecret, wrapSecret } from "../../lib/vault";
 import { buildRoomLink, copyText } from "../../lib/share";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +18,7 @@ interface Message {
   created_at: string;
 }
 
-const roomKeyStorage = (roomId: string) => `cryptiq_room_key_wrapped_${roomId}`;
+const roomKeyStorage = (roomId: string) => `cryptiq_room_key_${roomId}`;
 
 export default function RoomPage() {
   const params = useParams();
@@ -37,17 +34,13 @@ export default function RoomPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState<{ id: string; display_name: string } | null>(null);
-  const [hybridSupported, setHybridSupported] = useState(true);
-  const [shareVisible, setShareVisible] = useState(false);
   const lastIdRef = useRef(0);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const data = await apiFetch("/api/profile");
-        setProfile(data.user);
+        await apiFetch("/api/profile");
       } catch (err: any) {
         if (err.message === "unauthorized") {
           router.push("/auth");
@@ -58,41 +51,20 @@ export default function RoomPage() {
   }, [router]);
 
   useEffect(() => {
-    const loadRoomKey = async () => {
-      if (typeof window === "undefined") return;
-      const queryKey = searchParams.get("key");
-      if (queryKey) {
-        const wrapped = await wrapSecret(queryKey);
-        window.localStorage.setItem(roomKeyStorage(roomId), wrapped);
-        setRoomKey(queryKey);
-        setRoomKeyInput("");
-        setNotice("Room key loaded from secure link.");
-        return;
-      }
-      const wrapped = window.localStorage.getItem(roomKeyStorage(roomId));
-      if (wrapped) {
-        try {
-          const key = await unwrapSecret(wrapped);
-          setRoomKey(key);
-        } catch {
-          window.localStorage.removeItem(roomKeyStorage(roomId));
-          setError("Room key vault reset. Please re-enter the room key.");
-        }
-      }
-    };
-    loadRoomKey();
+    if (typeof window === "undefined") return;
+    const queryKey = searchParams.get("key");
+    if (queryKey) {
+      window.localStorage.setItem(roomKeyStorage(roomId), queryKey);
+      setRoomKey(queryKey);
+      setRoomKeyInput("");
+      setNotice("Room key loaded from secure link.");
+      return;
+    }
+    const stored = window.localStorage.getItem(roomKeyStorage(roomId));
+    if (stored) {
+      setRoomKey(stored);
+    }
   }, [roomId, searchParams]);
-
-  useEffect(() => {
-    const checkHybrid = async () => {
-      const supported = await isHybridSupported();
-      setHybridSupported(supported);
-      if (supported) {
-        await ensureDeviceKeys();
-      }
-    };
-    checkHybrid();
-  }, []);
 
   const loadMessages = async (key: string) => {
     setError(null);
@@ -161,18 +133,10 @@ export default function RoomPage() {
     };
   }, [roomKey]);
 
-  useEffect(() => {
-    if (roomKey || !hybridSupported) return;
-    handleCheckEnvelopes();
-    const timer = setInterval(handleCheckEnvelopes, 6000);
-    return () => clearInterval(timer);
-  }, [roomKey, hybridSupported]);
-
-  const handleSaveKey = async () => {
+  const handleSaveKey = () => {
     if (!roomKeyInput.trim()) return;
     const value = roomKeyInput.trim();
-    const wrapped = await wrapSecret(value);
-    window.localStorage.setItem(roomKeyStorage(roomId), wrapped);
+    window.localStorage.setItem(roomKeyStorage(roomId), value);
     setRoomKey(value);
     setRoomKeyInput("");
     setError(null);
@@ -219,83 +183,6 @@ export default function RoomPage() {
     setNotice("Secure link copied.");
   };
 
-  const handleShareKey = async () => {
-    if (!roomKey) return;
-    setError(null);
-    try {
-      if (!hybridSupported) {
-        setError("Hybrid key share is not supported on this browser.");
-        return;
-      }
-      await ensureDeviceKeys();
-      const keys = await apiFetch(`/api/rooms/${roomId}/keys`);
-      const envelopes = await Promise.all(
-        (keys.keys || [])
-          .filter((k: any) => k.user_id !== profile?.id)
-          .map(async (recipient: any) => {
-            const env = await createEnvelope(roomKey, recipient.kem_public_key, recipient.dh_public_key);
-            return {
-              recipient_id: recipient.user_id,
-              ...env,
-            };
-          })
-      );
-      if (envelopes.length) {
-        await apiFetch(`/api/rooms/${roomId}/envelopes`, {
-          method: "POST",
-          body: JSON.stringify({ envelopes }),
-        });
-        setNotice("Room key shared via hybrid envelope.");
-      }
-    } catch (err: any) {
-      if (err.message === "hybrid_unsupported") {
-        setHybridSupported(false);
-        setError("Hybrid key share is not supported on this browser.");
-        return;
-      }
-      setError(err.message || "Unable to share room key");
-    }
-  };
-
-  const handleCheckEnvelopes = async () => {
-    if (roomKey || !hybridSupported) return;
-    try {
-      await ensureDeviceKeys();
-      const data = await apiFetch(`/api/rooms/${roomId}/envelopes`);
-      if (!data.envelopes || data.envelopes.length === 0) return;
-      let kemPrivateKey: string;
-      let dhPrivateKey: string;
-      try {
-        const keys = await getPrivateKeys();
-        kemPrivateKey = keys.kemPrivateKey;
-        dhPrivateKey = keys.dhPrivateKey;
-      } catch {
-        return;
-      }
-      const env = data.envelopes[0];
-      const recovered = await openEnvelope(
-        kemPrivateKey,
-        dhPrivateKey,
-        env.kem_ciphertext,
-        env.dh_public_key,
-        env.wrapped_key
-      );
-      const wrapped = await wrapSecret(recovered);
-      window.localStorage.setItem(roomKeyStorage(roomId), wrapped);
-      setRoomKey(recovered);
-    } catch (err: any) {
-      if (err.message === "hybrid_unsupported") {
-        setHybridSupported(false);
-        return;
-      }
-      if (hybridSupported) {
-        setError("Unable to decrypt room key envelope.");
-      }
-    }
-  };
-
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
   const shareActions = useMemo(() => {
     if (!roomKey) return null;
     return (
@@ -306,20 +193,17 @@ export default function RoomPage() {
         <button className="button secondary" onClick={handleCopyLink}>
           Copy secure link
         </button>
-        <button className="button secondary" onClick={() => setShareVisible((v) => !v)}>
-          {shareVisible ? "Hide instructions" : "Show sharing guide"}
-        </button>
-        {shareVisible && (
-          <div className="panel" style={{ marginTop: 12 }}>
-            <p className="hero-subtitle">
-              Share the room key or secure link using a separate secure channel (Signal, iMessage, or in-person QR).
-              The server never sees the key.
-            </p>
-          </div>
-        )}
+        <div className="panel" style={{ marginTop: 12 }}>
+          <p className="hero-subtitle">
+            Share the room key or secure link using a separate secure channel (Signal, iMessage, or in-person). The
+            server never sees the key.
+          </p>
+        </div>
       </div>
     );
-  }, [roomKey, shareVisible]);
+  }, [roomKey]);
+
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   return (
     <div className="container">
@@ -340,7 +224,7 @@ export default function RoomPage() {
           <div className="panel">
             <h3>Room key vault</h3>
             <p className="hero-subtitle">
-              Room keys are stored in a local device vault (IndexedDB). Share the room key out-of-band.
+              Enter a room key to decrypt. Share it out-of-band to invite others.
             </p>
             <div className="form" style={{ marginTop: 16 }}>
               <input
@@ -356,22 +240,6 @@ export default function RoomPage() {
             </div>
             {roomKey && <div className="badge" style={{ marginTop: 16 }}>Key unlocked</div>}
             {shareActions}
-          </div>
-          <div className="panel">
-            <h3>Hybrid key share</h3>
-            <p className="hero-subtitle">
-              {hybridSupported
-                ? "Uses ML-KEM + X25519 to wrap the room key for each member."
-                : "Hybrid key share is not supported in this browser. Use manual sharing."}
-            </p>
-            <div className="form" style={{ marginTop: 16 }}>
-              <button className="button" onClick={handleShareKey} disabled={!roomKey || !hybridSupported}>
-                Share room key
-              </button>
-              <button className="button secondary" onClick={handleCheckEnvelopes} disabled={!hybridSupported}>
-                Check for key envelope
-              </button>
-            </div>
           </div>
         </aside>
 
