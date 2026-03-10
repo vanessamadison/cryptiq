@@ -150,6 +150,7 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (roomKey) return;
+    if (!hybridSupported) return;
     handleCheckEnvelopes();
     const timer = setInterval(handleCheckEnvelopes, 6000);
     return () => clearInterval(timer);
@@ -235,7 +236,15 @@ export default function RoomPage() {
       await ensureDeviceKeys();
       const data = await apiFetch(`/api/rooms/${roomId}/envelopes`);
       if (!data.envelopes || data.envelopes.length === 0) return;
-      const { kemPrivateKey, dhPrivateKey } = await getPrivateKeys();
+      let kemPrivateKey: string;
+      let dhPrivateKey: string;
+      try {
+        const keys = await getPrivateKeys();
+        kemPrivateKey = keys.kemPrivateKey;
+        dhPrivateKey = keys.dhPrivateKey;
+      } catch {
+        return;
+      }
       const env = data.envelopes[0];
       const recovered = await openEnvelope(
         kemPrivateKey,
@@ -248,11 +257,13 @@ export default function RoomPage() {
       window.localStorage.setItem(roomKeyStorage(roomId), wrapped);
       setRoomKey(recovered);
     } catch (err: any) {
-      if (err.message === "hybrid_unsupported") {
+      if (err?.message === "hybrid_unsupported") {
         setHybridSupported(false);
         return;
       }
-      setError("Unable to decrypt room key envelope.");
+      if (hybridSupported) {
+        setError("Unable to decrypt room key envelope.");
+      }
     }
   };
 
