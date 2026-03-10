@@ -73,7 +73,7 @@ async function deriveDhSecret(privateKeyB64: string, publicKeyB64: string) {
 
 export async function generateHybridKeypair() {
   const kem = await getKem();
-  const kemKeys = kem.keypair();
+  const kemKeys = await kem.keypair();
   const dhKeys = await generateDhKeypair();
 
   return {
