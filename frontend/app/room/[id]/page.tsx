@@ -33,6 +33,7 @@ export default function RoomPage() {
 
   const [roomKeyInput, setRoomKeyInput] = useState("");
   const [roomKey, setRoomKey] = useState<string | null>(null);
+  const [showKey, setShowKey] = useState(false);
   const [plainMessages, setPlainMessages] = useState<
     { id: number; sender: string; body: string; created_at: string }[]
   >([]);
@@ -201,6 +202,7 @@ export default function RoomPage() {
     setRoomKey(value);
     setRoomKeyInput("");
     setError(null);
+    setShowKey(false);
     setNotice("Room key saved to this device.");
   };
 
@@ -212,6 +214,7 @@ export default function RoomPage() {
     setRoomKey(key);
     setRoomKeyInput("");
     setError(null);
+    setShowKey(true);
     setNotice("Room key generated and saved.");
   };
 
@@ -242,6 +245,7 @@ export default function RoomPage() {
     setRoomKey(null);
     setPlainMessages([]);
     setError(null);
+    setShowKey(false);
     setNotice("Room locked. Enter or generate a key to unlock.");
   };
 
@@ -285,6 +289,15 @@ export default function RoomPage() {
     return keys;
   };
 
+  const resetPqcKeys = () => {
+    window.localStorage.removeItem(kemPublicStorage);
+    window.localStorage.removeItem(kemPrivateStorage);
+    window.localStorage.removeItem(dhPublicStorage);
+    window.localStorage.removeItem(dhPrivateStorage);
+    setPqcEnabled(false);
+    setNotice("PQC keys cleared. Click Enable PQC Demo to re-register.");
+  };
+
   const handleEnablePqc = async () => {
     if (!pqcSupported) {
       setError(pqcNote || "This browser does not support the PQC demo mode.");
@@ -304,7 +317,8 @@ export default function RoomPage() {
       setPqcEnabled(true);
       setNotice("PQC demo enabled. You can now share via PQC envelope.");
     } catch (err: any) {
-      setError(err.message || "Unable to enable PQC demo.");
+      resetPqcKeys();
+      setError("Unable to enable PQC demo. Keys reset, please try again.");
     }
   };
 
@@ -375,6 +389,10 @@ export default function RoomPage() {
   };
 
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const hasDecryptFailures = useMemo(
+    () => plainMessages.some((msg) => msg.body === "[Unable to decrypt]"),
+    [plainMessages]
+  );
 
   const shareActions = useMemo(() => {
     if (!roomKey) return null;
@@ -439,6 +457,22 @@ export default function RoomPage() {
                 Generate Key
               </button>
             </div>
+            {roomKey && (
+              <div className="form" style={{ marginTop: 12 }}>
+                <div className="meta">Current key</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10 }}>
+                  <input
+                    className="input"
+                    value={roomKey}
+                    readOnly
+                    type={showKey ? "text" : "password"}
+                  />
+                  <button className="button secondary" onClick={() => setShowKey((prev) => !prev)}>
+                    {showKey ? "Hide" : "Reveal"}
+                  </button>
+                </div>
+              </div>
+            )}
             {roomKey && <div className="badge" style={{ marginTop: 16 }}>Key unlocked</div>}
             {shareActions}
           </div>
@@ -463,6 +497,9 @@ export default function RoomPage() {
               <button className="button secondary" onClick={handleAcceptPqc} disabled={!pqcEnabled}>
                 Accept PQC Envelope
               </button>
+              <button className="button secondary" onClick={resetPqcKeys} disabled={!pqcSupported}>
+                Reset PQC Keys
+              </button>
             </div>
           </div>
         </aside>
@@ -470,7 +507,7 @@ export default function RoomPage() {
         <section className="chat-window">
           <div className="panel">
             <h3>Encrypted messages</h3>
-            <p className="hero-subtitle">Only clients with the room key can read these.</p>
+            <p className="hero-subtitle">Messages decrypt automatically once this device has the same room key.</p>
           </div>
 
           <div className="message-list">
@@ -482,6 +519,9 @@ export default function RoomPage() {
                 <div>{msg.body}</div>
               </div>
             ))}
+            {hasDecryptFailures && (
+              <div className="badge">Some messages could not decrypt. Verify both clients use the same key.</div>
+            )}
           </div>
 
           <div className="panel">
