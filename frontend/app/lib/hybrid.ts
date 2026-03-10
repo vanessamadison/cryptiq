@@ -86,7 +86,7 @@ export async function generateHybridKeypair() {
 
 export async function createEnvelope(roomKey: string, recipientKemPublicKey: string, recipientDhPublicKey: string) {
   const kem = await getKem();
-  const { ciphertext, sharedSecret } = kem.encapsulate(fromBase64(recipientKemPublicKey));
+  const { ciphertext, sharedSecret } = await kem.encapsulate(fromBase64(recipientKemPublicKey));
   const senderDhKeys = await generateDhKeypair();
   const dhSecret = await deriveDhSecret(senderDhKeys.privateKey, recipientDhPublicKey);
   const wrapKey = await deriveWrapKey(new Uint8Array(sharedSecret), dhSecret);
@@ -112,7 +112,7 @@ export async function openEnvelope(
   wrappedKey: string
 ) {
   const kem = await getKem();
-  const sharedSecret = kem.decapsulate(fromBase64(kemCiphertext), fromBase64(kemPrivateKey));
+  const sharedSecret = await kem.decapsulate(fromBase64(kemCiphertext), fromBase64(kemPrivateKey));
   const dhSecret = await deriveDhSecret(dhPrivateKey, senderDhPublicKey);
   const wrapKey = await deriveWrapKey(new Uint8Array(sharedSecret), dhSecret);
   const [ivB64, ctB64] = wrappedKey.split(":");
