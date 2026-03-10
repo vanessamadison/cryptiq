@@ -62,7 +62,8 @@ export default function RoomPage() {
           const key = await unwrapSecret(wrapped);
           setRoomKey(key);
         } catch {
-          setError("Room key is locked. Re-enter to unlock.");
+          window.localStorage.removeItem(roomKeyStorage(roomId));
+          setError("Room key vault reset. Please re-enter the room key.");
         }
       }
     };
@@ -227,7 +228,9 @@ export default function RoomPage() {
       window.localStorage.setItem(roomKeyStorage(roomId), wrapped);
       setRoomKey(recovered);
     } catch (err: any) {
-      setError("Unable to decrypt room key envelope.");
+      if (err?.message && err.message !== "request_failed") {
+        setError("Unable to decrypt room key envelope.");
+      }
     }
   };
 

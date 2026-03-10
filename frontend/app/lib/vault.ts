@@ -25,7 +25,7 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-async function getStoredKey(): Promise<CryptoKey | null> {
+async function getStoredKey(): Promise<string | null> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(VAULT_STORE, "readonly");
@@ -36,23 +36,40 @@ async function getStoredKey(): Promise<CryptoKey | null> {
   });
 }
 
-async function storeKey(key: CryptoKey): Promise<void> {
+async function storeKey(rawKey: string): Promise<void> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(VAULT_STORE, "readwrite");
     const store = tx.objectStore(VAULT_STORE);
-    store.put(key, VAULT_KEY_ID);
+    store.put(rawKey, VAULT_KEY_ID);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
 }
 
+async function importRawKey(rawKey: string): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    "raw",
+    fromBase64(rawKey),
+    { name: "AES-GCM" },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
 export async function getVaultKey(): Promise<CryptoKey> {
-  let key = await getStoredKey();
-  if (key) return key;
-  key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
-  await storeKey(key);
-  return key;
+  const stored = await getStoredKey();
+  if (stored) {
+    return importRawKey(stored);
+  }
+  const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, [
+    "encrypt",
+    "decrypt",
+  ]);
+  const raw = await crypto.subtle.exportKey("raw", key);
+  const encoded = toBase64(raw);
+  await storeKey(encoded);
+  return importRawKey(encoded);
 }
 
 export async function wrapSecret(secret: string) {
