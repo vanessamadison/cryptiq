@@ -174,25 +174,6 @@ Core concepts:
 * PBKDF2-derived room encryption keys
 * Optional browser-side PQC WebAssembly with ML-KEM
 
-**Deployment**
-
-* Vercel for frontend hosting
-* External Flask host for backend API
-
----
-
-## 𝘋𝘦𝘱𝘭𝘰𝘺𝘦𝘥 𝘌𝘯𝘷𝘪𝘳𝘰𝘯𝘮𝘦𝘯𝘵
-
-Current deployment targets:
-
-* **Frontend**
-  `https://frontend-lovat-xi-33.vercel.app`
-
-* **Backend**
-  `https://cryptiq-illapex-d0a26100.koyeb.app`
-
-If you redeploy the frontend, ensure `NEXT_PUBLIC_API_BASE` points at the backend URL above or your replacement backend host.
-
 ---
 
 ## 𝘘𝘶𝘪𝘤𝘬 𝘚𝘵𝘢𝘳𝘵
