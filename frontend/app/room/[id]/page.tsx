@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch, getApiBase, getToken } from "../../lib/api";
 import { decryptMessage, deriveRoomKey, encryptMessage } from "../../lib/crypto";
-import { createEnvelope, openEnvelope } from "../../lib/hybrid";
-import { ensureDeviceKeys, getPrivateKeys } from "../../lib/device";
+import { createEnvelope, openEnvelope, isHybridSupported } from "../../lib/hybrid";
+import { ensureDeviceKeys, getPrivateKeys, getPublicKeys } from "../../lib/device";
 import { unwrapSecret, wrapSecret } from "../../lib/vault";
 
 export const dynamic = "force-dynamic";
@@ -35,9 +35,9 @@ export default function RoomPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<{ id: string; display_name: string } | null>(null);
+  const [hybridSupported, setHybridSupported] = useState(true);
   const lastIdRef = useRef(0);
   const eventSourceRef = useRef<EventSource | null>(null);
-
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -69,6 +69,17 @@ export default function RoomPage() {
     };
     loadRoomKey();
   }, [roomId]);
+
+  useEffect(() => {
+    const checkHybrid = async () => {
+      const supported = await isHybridSupported();
+      setHybridSupported(supported);
+      if (supported) {
+        await ensureDeviceKeys();
+      }
+    };
+    checkHybrid();
+  }, []);
 
   const loadMessages = async (key: string) => {
     setError(null);
@@ -118,7 +129,7 @@ export default function RoomPage() {
           return [...prev, { id: msg.id, sender: msg.sender_name, body, created_at: msg.created_at }];
         });
         lastIdRef.current = Math.max(lastIdRef.current, msg.id);
-      } catch (err) {
+      } catch {
         // ignore parse/decrypt errors
       }
     };
@@ -142,13 +153,13 @@ export default function RoomPage() {
     handleCheckEnvelopes();
     const timer = setInterval(handleCheckEnvelopes, 6000);
     return () => clearInterval(timer);
-  }, [roomKey]);
+  }, [roomKey, hybridSupported]);
 
   const handleSaveKey = async () => {
-    if (!roomKeyInput) return;
-    const wrapped = await wrapSecret(roomKeyInput);
+    if (!roomKeyInput.trim()) return;
+    const wrapped = await wrapSecret(roomKeyInput.trim());
     window.localStorage.setItem(roomKeyStorage(roomId), wrapped);
-    setRoomKey(roomKeyInput);
+    setRoomKey(roomKeyInput.trim());
     setRoomKeyInput("");
     setError(null);
   };
@@ -185,6 +196,10 @@ export default function RoomPage() {
     if (!roomKey) return;
     setError(null);
     try {
+      if (!hybridSupported) {
+        setError("Hybrid key share is not supported on this browser.");
+        return;
+      }
       await ensureDeviceKeys();
       const keys = await apiFetch(`/api/rooms/${roomId}/keys`);
       const envelopes = await Promise.all(
@@ -205,12 +220,17 @@ export default function RoomPage() {
         });
       }
     } catch (err: any) {
+      if (err.message === "hybrid_unsupported") {
+        setHybridSupported(false);
+        setError("Hybrid key share is not supported on this browser.");
+        return;
+      }
       setError(err.message || "Unable to share room key");
     }
   };
 
   const handleCheckEnvelopes = async () => {
-    if (roomKey) return;
+    if (roomKey || !hybridSupported) return;
     try {
       await ensureDeviceKeys();
       const data = await apiFetch(`/api/rooms/${roomId}/envelopes`);
@@ -228,9 +248,11 @@ export default function RoomPage() {
       window.localStorage.setItem(roomKeyStorage(roomId), wrapped);
       setRoomKey(recovered);
     } catch (err: any) {
-      if (err?.message && err.message !== "request_failed") {
-        setError("Unable to decrypt room key envelope.");
+      if (err.message === "hybrid_unsupported") {
+        setHybridSupported(false);
+        return;
       }
+      setError("Unable to decrypt room key envelope.");
     }
   };
 
@@ -274,13 +296,15 @@ export default function RoomPage() {
           <div className="panel">
             <h3>Hybrid key share</h3>
             <p className="hero-subtitle">
-              Uses ML-KEM + X25519 to wrap the room key for each member.
+              {hybridSupported
+                ? "Uses ML-KEM + X25519 to wrap the room key for each member."
+                : "Hybrid key share is not supported in this browser. Use manual sharing."}
             </p>
             <div className="form" style={{ marginTop: 16 }}>
-              <button className="button" onClick={handleShareKey} disabled={!roomKey}>
+              <button className="button" onClick={handleShareKey} disabled={!roomKey || !hybridSupported}>
                 Share room key
               </button>
-              <button className="button secondary" onClick={handleCheckEnvelopes}>
+              <button className="button secondary" onClick={handleCheckEnvelopes} disabled={!hybridSupported}>
                 Check for key envelope
               </button>
             </div>

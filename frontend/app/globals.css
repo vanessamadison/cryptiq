@@ -1,15 +1,15 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
 :root {
   color-scheme: dark;
-  --bg: #07090d;
-  --bg-elev: rgba(13, 16, 24, 0.9);
-  --bg-glass: rgba(10, 13, 20, 0.75);
-  --border: rgba(148, 163, 184, 0.18);
-  --text: #f5f7fb;
-  --muted: #9aa4b2;
-  --accent: #7cf0ff;
-  --accent-2: #9aa8ff;
+  --bg: #0b0c10;
+  --bg-elev: rgba(16, 18, 24, 0.92);
+  --bg-glass: rgba(12, 14, 20, 0.78);
+  --border: rgba(148, 163, 184, 0.16);
+  --text: #f5f6f8;
+  --muted: #a5adba;
+  --accent: #a7b1c5;
+  --accent-2: #c6cedd;
   --danger: #ff6b6b;
   --success: #6bff95;
   --shadow: 0 28px 70px rgba(2, 4, 10, 0.6);
@@ -27,7 +27,7 @@ body {
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Inter Tight", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 body {
@@ -35,9 +35,9 @@ body {
   min-height: 100dvh;
   background-color: var(--bg);
   background-image:
-    radial-gradient(circle at 12% 18%, rgba(124, 240, 255, 0.18), transparent 45%),
-    radial-gradient(circle at 80% 20%, rgba(154, 168, 255, 0.18), transparent 42%),
-    radial-gradient(circle at 50% 85%, rgba(124, 240, 255, 0.12), transparent 55%);
+    radial-gradient(circle at 12% 18%, rgba(186, 198, 222, 0.22), transparent 45%),
+    radial-gradient(circle at 80% 20%, rgba(143, 156, 180, 0.18), transparent 42%),
+    radial-gradient(circle at 50% 85%, rgba(186, 198, 222, 0.12), transparent 55%);
   background-repeat: no-repeat;
   background-size: cover;
   position: relative;
@@ -54,15 +54,15 @@ body::after {
 }
 
 body::before {
-  background: linear-gradient(180deg, rgba(7, 9, 13, 0.2) 0%, rgba(7, 9, 13, 0.85) 65%, rgba(7, 9, 13, 0.98) 100%);
+  background: linear-gradient(180deg, rgba(11, 12, 16, 0.2) 0%, rgba(11, 12, 16, 0.85) 65%, rgba(11, 12, 16, 0.98) 100%);
 }
 
 body::after {
   background-image:
-    radial-gradient(circle at 20% 30%, rgba(124, 240, 255, 0.08), transparent 55%),
-    radial-gradient(circle at 85% 60%, rgba(154, 168, 255, 0.08), transparent 50%);
+    radial-gradient(circle at 20% 30%, rgba(186, 198, 222, 0.08), transparent 55%),
+    radial-gradient(circle at 85% 60%, rgba(143, 156, 180, 0.08), transparent 50%);
   mix-blend-mode: screen;
-  opacity: 0.7;
+  opacity: 0.55;
 }
 
 a {
@@ -153,8 +153,8 @@ main {
 .button {
   padding: 12px 18px;
   border-radius: 10px;
-  border: 1px solid rgba(154, 168, 255, 0.45);
-  background: linear-gradient(135deg, rgba(124, 240, 255, 0.9), rgba(154, 168, 255, 0.95));
+  border: 1px solid rgba(198, 206, 221, 0.6);
+  background: linear-gradient(135deg, rgba(198, 206, 221, 0.95), rgba(167, 177, 197, 0.9));
   color: #05070c;
   font-weight: 600;
   cursor: pointer;
@@ -163,7 +163,7 @@ main {
 
 .button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 32px rgba(124, 240, 255, 0.2);
+  box-shadow: 0 14px 32px rgba(167, 177, 197, 0.25);
 }
 
 .button.secondary {
@@ -211,7 +211,7 @@ main {
 }
 
 .input::placeholder {
-  color: rgba(154, 168, 255, 0.5);
+  color: rgba(165, 173, 186, 0.6);
 }
 
 .split {
@@ -251,13 +251,13 @@ main {
 .message {
   padding: 12px 14px;
   border-radius: 12px;
-  background: rgba(124, 240, 255, 0.08);
-  border: 1px solid rgba(124, 240, 255, 0.2);
+  background: rgba(198, 206, 221, 0.12);
+  border: 1px solid rgba(198, 206, 221, 0.2);
 }
 
 .message.you {
-  background: rgba(154, 168, 255, 0.15);
-  border-color: rgba(154, 168, 255, 0.3);
+  background: rgba(167, 177, 197, 0.18);
+  border-color: rgba(167, 177, 197, 0.32);
 }
 
 .message .meta {
@@ -270,8 +270,8 @@ main {
   gap: 8px;
   padding: 6px 10px;
   border-radius: 10px;
-  border: 1px solid rgba(124, 240, 255, 0.25);
-  background: rgba(124, 240, 255, 0.08);
+  border: 1px solid rgba(198, 206, 221, 0.25);
+  background: rgba(198, 206, 221, 0.08);
   font-size: 0.8rem;
 }
 

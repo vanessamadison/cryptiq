@@ -7,6 +7,7 @@ const fromBase64 = (value: string) =>
   Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
 
 let kemInstance: any = null;
+let hybridSupportedCache: boolean | null = null;
 
 async function getKem() {
   if (!kemInstance) {
@@ -14,6 +15,27 @@ async function getKem() {
     kemInstance = await kyberBuilder(false, "/pqc-kem-kyber768.wasm");
   }
   return kemInstance;
+}
+
+export async function isHybridSupported() {
+  if (hybridSupportedCache !== null) return hybridSupportedCache;
+  try {
+    if (!crypto?.subtle) {
+      hybridSupportedCache = false;
+      return false;
+    }
+    await getKem();
+    await crypto.subtle.generateKey(
+      { name: "X25519", namedCurve: "X25519" },
+      true,
+      ["deriveBits"]
+    );
+    hybridSupportedCache = true;
+    return true;
+  } catch {
+    hybridSupportedCache = false;
+    return false;
+  }
 }
 
 async function hashConcat(buffers: Uint8Array[]) {
@@ -71,6 +93,9 @@ async function deriveDhSecret(privateKeyB64: string, publicKeyB64: string) {
 }
 
 export async function generateHybridKeypair() {
+  if (!(await isHybridSupported())) {
+    throw new Error("hybrid_unsupported");
+  }
   const kem = await getKem();
   const kemKeys = await kem.keypair();
   const dhKeys = await generateDhKeypair();
@@ -84,6 +109,9 @@ export async function generateHybridKeypair() {
 }
 
 export async function createEnvelope(roomKey: string, recipientKemPublicKey: string, recipientDhPublicKey: string) {
+  if (!(await isHybridSupported())) {
+    throw new Error("hybrid_unsupported");
+  }
   const kem = await getKem();
   const { ciphertext, sharedSecret } = await kem.encapsulate(fromBase64(recipientKemPublicKey));
   const senderDhKeys = await generateDhKeypair();
@@ -110,6 +138,9 @@ export async function openEnvelope(
   senderDhPublicKey: string,
   wrappedKey: string
 ) {
+  if (!(await isHybridSupported())) {
+    throw new Error("hybrid_unsupported");
+  }
   const kem = await getKem();
   const { sharedSecret } = await kem.decapsulate(
     fromBase64(kemCiphertext),
