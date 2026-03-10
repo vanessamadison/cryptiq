@@ -13,39 +13,31 @@
 
 ## 𝘖𝘷𝘦𝘳𝘷𝘪𝘦𝘸
 
-**CryptiQ 2.0** is a post-quantum-ready secure messaging platform and reference build that pairs a hardened Flask API with a sleek, Apple-inspired, dark-mode client.
+**CryptiQ 2.0** is a post-quantum-ready secure messaging platform and reference build that pairs a hardened Flask API with a sleek, Apple-inspired client.
 
-This version emphasizes **fully usable** secure rooms with client-held encryption keys, while aligning the crypto language with NIST’s latest naming:
+This version supports two modes for secure key exchange:
 
-* **ML-KEM (Kyber-768)** for key establishment
-* **ML-DSA (Dilithium-3)** for signatures
+* **Tier 1 (Manual share)**
+  Room keys are generated client-side and shared out-of-band. This always works and is the default demo flow.
 
-The production-grade UX is built to feel like Signal and Session — minimal, elegant, and quiet.
+* **Tier 2 (PQC demo mode)**
+  On supported browsers, room keys can be shared using ML-KEM envelopes (PQC mode).
 
 ---
 
 ## 𝘒𝘦𝘺 𝘊𝘢𝘱𝘢𝘣𝘪𝘭𝘪𝘵𝘪𝘦𝘴
 
 * **Post-quantum alignment**
-  Uses modern naming (ML-KEM / ML-DSA) and supports server-side PQC hooks when liboqs is available.
+  Uses modern naming (ML-KEM / ML-DSA) and supports PQC demos via WebAssembly.
 
 * **Room-key encryption**
   Room secrets never leave the client. Servers store ciphertext only.
 
-* **Hybrid PQC key share**
-  Client-side ML-KEM + X25519 envelopes distribute room keys to members.
+* **Tiered key exchange**
+  Manual share always works. PQC mode is optional and gated by browser capability.
 
 * **Sleek, focused UI**
-  Dark-mode glass UI with signal-style layout and Apple-grade polish.
-
-* **Secure auth + room management**
-  JWT-based auth, room creation, join flows, and membership tracking.
-
-* **Device-bound vault**
-  Room keys and PQC private keys are wrapped with a local IndexedDB vault.
-
-* **MVP that runs out of the box**
-  Minimal dependencies and fast local setup.
+  Dark mode, liquid gradients, and an enterprise-first aesthetic.
 
 ---
 
@@ -68,9 +60,7 @@ Core concepts:
 * Backend Flask service for auth, rooms, and encrypted message storage
 * Client-side AES-GCM encryption with per-room secrets
 * NIST-aligned algorithm naming for PQC posture
-* Server-Sent Events for real-time message delivery
-* Hybrid PQC + classical envelopes for room key distribution
-* Device-bound vault for local key wrapping
+* Tiered key exchange for demos
 
 ---
 
@@ -86,7 +76,7 @@ Core concepts:
 
 * Next.js + React
 * Web Crypto API (AES-GCM)
-* Apple-inspired UI styling
+* Optional PQC WebAssembly (ML-KEM)
 
 ---
 
@@ -120,27 +110,43 @@ Backend:  http://localhost:5000
 
 ---
 
+## 𝘛𝘦𝘴𝘵𝘪𝘯𝘨 𝘛𝘪𝘦𝘳 1 (Manual share)
+
+1. Create a room.
+2. Click **Generate key**, then **Save key**.
+3. Click **Copy secure link** and send it via another secure channel (Signal/iMessage/Proton).
+4. Recipient opens the link — key auto-loads, chat decrypts.
+
+---
+
+## 𝘛𝘦𝘴𝘵𝘪𝘯𝘨 𝘛𝘪𝘦𝘳 2 (PQC demo)
+
+1. Open the room in a browser that supports PQC demo mode.
+2. Click **Enable PQC demo**.
+3. On the sender side, click **Share via PQC**.
+4. On the recipient side, click **Accept PQC envelope**.
+
+If the browser does not support PQC demo mode, the UI will indicate this and fall back to manual sharing.
+
+---
+
 ## 𝘚𝘦𝘤𝘶𝘳𝘪𝘵𝘺 𝘔𝘰𝘥𝘦𝘭
 
 CryptiQ focuses on the following security properties:
 
-* Client-held room keys derived with PBKDF2
+* Client-held room keys
 * AES-GCM encryption for message payloads
-* Hybrid ML-KEM + X25519 envelopes for room key sharing
-* Device-local vault wrapping for PQC and room secrets
 * JWT-secured API access and room membership checks
 * Server stores only ciphertext, nonce, and metadata
-
-For PQC research extensions, the backend can be augmented with liboqs to provide ML-KEM/ML-DSA operations.
+* Optional PQC demo mode for ML-KEM envelope exchange
 
 ---
 
 ## 𝘙𝘰𝘢𝘥𝘮𝘢𝘱
 
-* Optional liboqs integration for server-side PQC key exchange demos
-* WebSocket / SSE real-time transport
-* Room key envelopes with multi-device support
-* Auditable security logging
+* QR code sharing for room links
+* Optional hardware-backed key storage
+* Full liboqs integration on backend
 
 ---
 
