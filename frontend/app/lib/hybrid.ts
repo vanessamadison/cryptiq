@@ -67,7 +67,7 @@ async function generateDhKeypair() {
     ["deriveBits"]
   );
   const publicKey = await crypto.subtle.exportKey("raw", keypair.publicKey);
-  const privateKey = await crypto.subtle.exportKey("raw", keypair.privateKey);
+  const privateKey = await crypto.subtle.exportKey("pkcs8", keypair.privateKey);
   return {
     publicKey: toBase64(publicKey),
     privateKey: toBase64(privateKey),
@@ -76,7 +76,7 @@ async function generateDhKeypair() {
 
 async function deriveDhSecret(privateKeyB64: string, publicKeyB64: string) {
   const privateKey = await crypto.subtle.importKey(
-    "raw",
+    "pkcs8",
     fromBase64(privateKeyB64),
     { name: "X25519", namedCurve: "X25519" },
     false,

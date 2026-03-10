@@ -11,13 +11,7 @@ export async function deriveRoomKey(roomId: string, passphrase: string) {
   if (!crypto?.subtle) {
     throw new Error("webcrypto_unavailable");
   }
-  const saltKey = `cryptiq_room_salt_${roomId}`;
-  let salt = window.localStorage.getItem(saltKey);
-  if (!salt) {
-    const random = crypto.getRandomValues(new Uint8Array(16));
-    salt = toBase64(random.buffer);
-    window.localStorage.setItem(saltKey, salt);
-  }
+  const salt = textEncoder.encode(`cryptiq-room:${roomId}`);
 
   const baseKey = await crypto.subtle.importKey(
     "raw",
@@ -30,7 +24,7 @@ export async function deriveRoomKey(roomId: string, passphrase: string) {
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt: fromBase64(salt),
+      salt,
       iterations: 120000,
       hash: "SHA-256",
     },
