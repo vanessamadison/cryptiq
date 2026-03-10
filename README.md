@@ -1,4 +1,4 @@
-# 𝘊𝘳𝘺𝘱𝘵𝘪𝘘 2.0
+# 𝘊𝘳𝘺𝘱𝘵𝘪𝘘
 
 ![Version](https://img.shields.io/badge/Version-v2.0-000000?style=for-the-badge&logo=github&logoColor=white)
 [![Python](https://img.shields.io/badge/Python-000000?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org)
@@ -15,85 +15,121 @@
 
 **CryptiQ 2.0** is a post-quantum-ready secure messaging platform and reference implementation that pairs a Flask API with a sleek dark-mode client designed for practical demos.
 
-This version was rebuilt around a usable demo story:
+---
 
-* **Tier 1 (Manual share)**
-  A room key is generated client-side, shared out-of-band, and never sent to the server. This is the primary production-style demo flow and works across modern browsers.
+## 𝘝𝘪𝘴𝘶𝘢𝘭 𝘗𝘳𝘦𝘷𝘪𝘦𝘸
 
-* **Tier 2 (PQC demo mode)**
-  On supported Chromium browsers, room keys can also be shared through ML-KEM envelopes backed by WebAssembly. This is an explicit demo path for post-quantum key distribution.
+<p align="center">
+  <b>1. Initial Room State</b><br/>
+  <img src="assets/initial.png" width="90%" alt="Initial State" />
+</p>
+
+<p align="center">
+  <b>2. Encryption Modes & PQC Registration</b><br/>
+  <img src="assets/modes.png" width="90%" alt="Encryption Modes" />
+</p>
+
+<p align="center">
+  <b>3. Room Key Vault & Secure Unlocking</b><br/>
+  <img src="assets/unlocked.png" width="90%" alt="Room Unlocked" />
+</p>
+
+<p align="center">
+  <b>4. End-to-End Encrypted Chat</b><br/>
+  <img src="assets/messages.png" width="90%" alt="Encrypted Chat" />
+</p>
 
 ---
 
-## 𝘞𝘩𝘢𝘵 𝘊𝘩𝘢𝘯𝘨𝘦𝘥 𝘪𝘯 2.0
+## 𝘚𝘺𝘴𝘵𝘦𝘮 𝘞𝘰𝘳𝘬𝘧𝘭𝘰𝘸
 
-CryptiQ 2.0 is not just a visual refresh. The app was updated to be substantially more usable and more coherent as a PQC portfolio project:
+```mermaid
+flowchart TB
+    Start((Start)) --> Create[Create Room]
+    Create --> Gen[Generate Room Key]
+    
+    Gen --> PathA{Manual Path}
+    Gen --> PathB{PQC Path}
 
-* **Full room-based encrypted chat flow**
-  Users can create rooms, join rooms, generate room keys, share secure links, and exchange encrypted messages with automatic decryption once the correct key is present.
+    subgraph Manual [Tier 1: Manual Share]
+        PathA --> Link[Copy Secure Link]
+        Link -.->|Secure Channel| Join[Open Link & Save Key]
+    end
 
-* **Deterministic cross-device room key derivation**
-  The room key flow now works correctly across devices. If two clients have the same room key for the same room, they derive the same AES-GCM key and can decrypt each other's messages.
+    subgraph PQC [Tier 2: PQC Demo]
+        PathB --> Reg[Register PQC Public Keys]
+        Reg --> Wrap[Share via ML-KEM Envelope]
+        Wrap --> Server[(Server Storage)]
+        Server --> Unwrap[Accept & Decrypt Envelope]
+    end
 
-* **Clear dual-path demo story**
-  Manual key sharing is the default path. PQC sharing is now framed as an advanced demo mode rather than the only path.
+    Join --> Ready[Room Unlocked]
+    Unwrap --> Ready
 
-* **Professional interface redesign**
-  The frontend was redesigned with a darker enterprise palette, SF-like system typography, liquid gradient background, better mobile spacing, and cleaner room controls.
-
-* **Live room behavior**
-  The client supports message streaming and a polling fallback, so new messages appear automatically even when browser SSE behavior is inconsistent.
-
-* **Deployment-ready stack**
-  The frontend is configured for Vercel deployment and the backend is configured for an external Flask host.
+    Ready --> Msg[Send Encrypted Message]
+    Msg --> AES[AES-GCM Encryption]
+    AES --> Post[POST Ciphertext to Server]
+    Post --> Broadcast[SSE / Polling Broadcast]
+    Broadcast --> Recv[Receive & Decrypt on Peer]
+```
 
 ---
 
-## 𝘋𝘦𝘮𝘰 𝘍𝘭𝘰𝘸 (𝘛𝘦𝘴𝘵𝘪𝘯𝘨)
+## 𝘜𝘴𝘦𝘳 𝘚𝘵𝘰𝘳𝘪𝘦𝘴 & 𝘋𝘦𝘮𝘰 𝘍𝘭𝘰𝘸
 
-**Tier 1 (Manual share, recommended)**
+### **Story A: The Secure Standard (Manual Share)**
+*The primary production-style flow that works across all modern browsers.*
 
-1. Create a room.
-2. Click **Generate Key** in the Room Key Vault.
-3. Click **Copy Secure Link** or **Copy Key**.
-4. Share that secret over a separate secure channel such as Signal, iMessage, Proton Mail, or in person.
-5. On the second device, sign in and either open the secure link or paste the room key and click **Save Key**.
-6. Messages decrypt automatically once both clients hold the same room key.
+1. **Host:** Create a room and click **Generate Key** in the Room Key Vault.
+2. **Host:** Click **Copy Secure Link** (this includes the room ID and the secret key).
+3. **Guest:** Open the secure link. The room ID and key are automatically populated.
+4. **Guest:** Click **Save Key**. The UI will confirm: *"Room key saved to this device."*
+5. **Chat:** Both sides can now send messages. Encryption and decryption happen automatically.
 
-**Tier 2 (PQC demo, Chromium only)**
+### **Story B: The Post-Quantum Demo (PQC Mode)**
+*An advanced demo path using ML-KEM envelopes, optimized for Chromium browsers.*
 
-1. Use Chrome, Brave, or Edge on both devices.
-2. Both clients click **Enable PQC Demo** to register ephemeral PQC demo keys.
-3. Sender flow: click **Share via PQC**.
-4. Recipient flow: click **Accept PQC Envelope**.
-5. The recipient unlocks the room key and can immediately participate in the encrypted chat.
+1. **Setup:** Both users click **Enable PQC Demo** on their respective devices (Chrome/Edge/Brave).
+2. **Sender:** Click **Share via PQC**. This wraps the room key in a quantum-resistant envelope.
+3. **Recipient:** Click **Accept PQC Envelope**. The device unwraps the key using its local PQC private key.
+4. **Result:** The room is unlocked without the secret ever being shared manually or in plaintext.
 
-**Browser support**
+---
 
-* **Manual share**
-  Works in Safari, Chrome, Edge, and Brave.
+## 𝘞𝘩𝘢𝘵’𝘴 𝘕𝘦𝘸 𝘪𝘯 2.0
 
-* **PQC demo**
-  Intended for Chromium browsers. Safari does not support the X25519 path required by the current browser-side PQC demo implementation.
+CryptiQ 2.0 is substantially more usable and coherent as a PQC portfolio project:
+
+* **Deterministic Key Derivation**
+  Fixed a bug where different devices derived different AES keys from the same room secret. Now, shared secrets result in perfect decryption across all clients.
+
+* **Enhanced PQC Reliability**
+  Resolved X25519 private key handling errors in Chromium. PQC envelopes now reliably transport room secrets between modern browsers.
+
+* **Live Room Experience**
+  - **Auto-Refresh:** New messages appear automatically via event streams with a robust polling fallback.
+  - **Intuitive Sending:** Press **Enter** in the message box to send immediately.
+  - **Clear Feedback:** Visual indicators confirm when a room key is successfully saved or unlocked.
+
+* **Professional Interface**
+  Redesigned with a darker enterprise palette, SF-like typography, and better mobile responsiveness.
 
 ---
 
 ## 𝘒𝘦𝘺 𝘊𝘢𝘱𝘢𝘣𝘪𝘭𝘪𝘵𝘪𝘦𝘴
 
 * **Post-quantum alignment**
-  Uses modern NIST-aligned terminology such as ML-KEM and ML-DSA in the product and documentation.
+  Uses modern NIST-aligned terminology such as ML-KEM and ML-DSA.
 
 * **Room-key encryption**
-  Room secrets are created and retained on the client. The server stores ciphertext, nonce, membership metadata, and message timestamps only.
+  Room secrets are created and retained on the client. The server stores only ciphertext and metadata.
 
 * **Tiered key exchange**
-  Manual room-key distribution is always available. PQC sharing is optional and explicit.
+  Manual out-of-band distribution is the reliable default; PQC sharing is the cutting-edge alternative.
 
-* **Automatic room updates**
-  Rooms update through server-sent events with polling fallback for reliability.
-
-* **Polished dark-mode interface**
-  The UI is optimized for desktop and mobile and avoids the earlier juvenile look in favor of a more enterprise-focused presentation.
+* **Browser support**
+  - **Manual:** Safari, Chrome, Edge, Brave.
+  - **PQC:** Chromium-based (Chrome, Brave, Edge). Safari is currently limited to manual sharing.
 
 ---
 
