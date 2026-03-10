@@ -47,6 +47,7 @@ export default function RoomPage() {
   const [profile, setProfile] = useState<{ id: string; display_name: string } | null>(null);
   const lastIdRef = useRef(0);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const pollRef = useRef<number | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -186,8 +187,15 @@ export default function RoomPage() {
     if (!roomKey) return;
     loadMessages(roomKey);
     openStream(roomKey);
+    pollRef.current = window.setInterval(() => {
+      loadMessages(roomKey);
+    }, 3000);
     return () => {
       eventSourceRef.current?.close();
+      if (pollRef.current) {
+        window.clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
     };
   }, [roomKey]);
 
@@ -233,6 +241,7 @@ export default function RoomPage() {
         body: JSON.stringify(payload),
       });
       inputRef.current.value = "";
+      await loadMessages(roomKey);
     } catch (err: any) {
       setError(err.message || "Unable to send message");
     } finally {
@@ -481,7 +490,7 @@ export default function RoomPage() {
             <h3>PQC demo mode</h3>
             <p className="hero-subtitle">
               {pqcSupported
-                ? "Enable PQC demo to share the room key using ML-KEM envelopes."
+                ? "Sender flow: Enable PQC Demo, then Share via PQC. Recipient flow: Enable PQC Demo, then Accept PQC Envelope."
                 : pqcNote || "PQC demo is not supported in this browser. Use manual sharing."}
             </p>
             {!pqcSupported && pqcUnsupportedLabel && (
@@ -531,6 +540,12 @@ export default function RoomPage() {
                 ref={inputRef}
                 placeholder="Type a message"
                 disabled={!roomKey}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    void handleSend();
+                  }
+                }}
               />
               <button className="button" onClick={handleSend} disabled={!roomKey || loading}>
                 {loading ? "Sending" : "Send"}
