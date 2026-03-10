@@ -134,12 +134,23 @@ export default function RoomPage() {
   }, [roomKey]);
 
   const handleSaveKey = () => {
-    if (!roomKeyInput.trim()) return;
+    if (!roomKeyInput.trim()) {
+      setError("Enter a room key first.");
+      return;
+    }
     const value = roomKeyInput.trim();
     window.localStorage.setItem(roomKeyStorage(roomId), value);
     setRoomKey(value);
     setRoomKeyInput("");
     setError(null);
+    setNotice("Room key saved to this device.");
+  };
+
+  const handleGenerateKey = () => {
+    const bytes = crypto.getRandomValues(new Uint8Array(24));
+    const key = btoa(String.fromCharCode(...bytes));
+    setRoomKeyInput(key);
+    setNotice("New room key generated. Click Save key.");
   };
 
   const handleSend = async () => {
@@ -186,13 +197,13 @@ export default function RoomPage() {
   const shareActions = useMemo(() => {
     if (!roomKey) return null;
     return (
-      <div className="form" style={{ marginTop: 16 }}>
-        <button className="button" onClick={handleCopyKey}>
-          Copy room key
-        </button>
-        <button className="button secondary" onClick={handleCopyLink}>
-          Copy secure link
-        </button>
+        <div className="form" style={{ marginTop: 16 }}>
+          <button className="button" onClick={handleCopyKey}>
+            Copy room key
+          </button>
+          <button className="button secondary" onClick={handleCopyLink}>
+            Copy secure link
+          </button>
         <div className="panel" style={{ marginTop: 12 }}>
           <p className="hero-subtitle">
             Share the room key or secure link using a separate secure channel (Signal, iMessage, or in-person). The
@@ -236,6 +247,9 @@ export default function RoomPage() {
               />
               <button className="button" onClick={handleSaveKey}>
                 Save key
+              </button>
+              <button className="button secondary" onClick={handleGenerateKey}>
+                Generate key
               </button>
             </div>
             {roomKey && <div className="badge" style={{ marginTop: 16 }}>Key unlocked</div>}
