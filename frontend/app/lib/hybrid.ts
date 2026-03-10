@@ -112,7 +112,10 @@ export async function openEnvelope(
   wrappedKey: string
 ) {
   const kem = await getKem();
-  const sharedSecret = await kem.decapsulate(fromBase64(kemCiphertext), fromBase64(kemPrivateKey));
+  const { sharedSecret } = await kem.decapsulate(
+    fromBase64(kemCiphertext),
+    fromBase64(kemPrivateKey)
+  );
   const dhSecret = await deriveDhSecret(dhPrivateKey, senderDhPublicKey);
   const wrapKey = await deriveWrapKey(new Uint8Array(sharedSecret), dhSecret);
   const [ivB64, ctB64] = wrappedKey.split(":");
