@@ -59,7 +59,7 @@ async function importRawKey(rawKey: string): Promise<CryptoKey> {
 
 export async function getVaultKey(): Promise<CryptoKey> {
   const stored = await getStoredKey();
-  if (stored) {
+  if (stored && typeof stored === "string") {
     return importRawKey(stored);
   }
   const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, [
