@@ -1,0 +1,19 @@
+app = "cryptiq-backend"
+primary_region = "den"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  CRYPTIQ_TOKEN_TTL_MIN = "120"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[mounts]]
+  source = "cryptiq_data"
+  destination = "/data"
