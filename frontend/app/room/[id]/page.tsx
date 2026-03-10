@@ -9,6 +9,8 @@ import { createEnvelope, openEnvelope } from "../../lib/hybrid";
 import { ensureDeviceKeys, getPrivateKeys } from "../../lib/device";
 import { unwrapSecret, wrapSecret } from "../../lib/vault";
 
+export const dynamic = "force-dynamic";
+
 interface Message {
   id: number;
   sender_id: string;

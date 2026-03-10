@@ -1,5 +1,3 @@
-import kyberBuilder from "@dashlane/pqc-kem-kyber768-browser";
-
 const textEncoder = new TextEncoder();
 
 const toBase64 = (buffer: ArrayBuffer) =>
@@ -8,10 +6,11 @@ const toBase64 = (buffer: ArrayBuffer) =>
 const fromBase64 = (value: string) =>
   Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
 
-let kemInstance: Awaited<ReturnType<typeof kyberBuilder>> | null = null;
+let kemInstance: any = null;
 
 async function getKem() {
   if (!kemInstance) {
+    const { default: kyberBuilder } = await import("@dashlane/pqc-kem-kyber768-browser");
     kemInstance = await kyberBuilder();
   }
   return kemInstance;

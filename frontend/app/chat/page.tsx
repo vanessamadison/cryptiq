@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { apiFetch, clearToken } from "../lib/api";
 import { ensureDeviceKeys } from "../lib/device";
 
+export const dynamic = "force-dynamic";
+
 interface Room {
   id: string;
   name: string;
