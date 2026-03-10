@@ -11,7 +11,7 @@ let kemInstance: any = null;
 async function getKem() {
   if (!kemInstance) {
     const { default: kyberBuilder } = await import("@dashlane/pqc-kem-kyber768-browser");
-    kemInstance = await kyberBuilder();
+    kemInstance = await kyberBuilder(false, "/pqc-kem-kyber768.wasm");
   }
   return kemInstance;
 }
