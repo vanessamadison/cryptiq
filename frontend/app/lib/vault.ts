@@ -47,6 +47,17 @@ async function storeKey(rawKey: string): Promise<void> {
   });
 }
 
+async function clearStoredKey(): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(VAULT_STORE, "readwrite");
+    const store = tx.objectStore(VAULT_STORE);
+    store.delete(VAULT_KEY_ID);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 async function importRawKey(rawKey: string): Promise<CryptoKey> {
   return crypto.subtle.importKey(
     "raw",
@@ -60,7 +71,11 @@ async function importRawKey(rawKey: string): Promise<CryptoKey> {
 export async function getVaultKey(): Promise<CryptoKey> {
   const stored = await getStoredKey();
   if (stored && typeof stored === "string") {
-    return importRawKey(stored);
+    try {
+      return await importRawKey(stored);
+    } catch {
+      await clearStoredKey();
+    }
   }
   const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, [
     "encrypt",
@@ -73,24 +88,47 @@ export async function getVaultKey(): Promise<CryptoKey> {
 }
 
 export async function wrapSecret(secret: string) {
-  const key = await getVaultKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    textEncoder.encode(secret)
-  );
-  return `${toBase64(iv.buffer)}:${toBase64(ciphertext)}`;
+  try {
+    const key = await getVaultKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      textEncoder.encode(secret)
+    );
+    return `${toBase64(iv.buffer)}:${toBase64(ciphertext)}`;
+  } catch (err: any) {
+    await clearStoredKey();
+    const key = await getVaultKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      textEncoder.encode(secret)
+    );
+    return `${toBase64(iv.buffer)}:${toBase64(ciphertext)}`;
+  }
 }
 
 export async function unwrapSecret(wrapped: string) {
   const [ivB64, ctB64] = wrapped.split(":");
   if (!ivB64 || !ctB64) throw new Error("invalid_wrapped_secret");
-  const key = await getVaultKey();
-  const plaintext = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: fromBase64(ivB64) },
-    key,
-    fromBase64(ctB64)
-  );
-  return textDecoder.decode(plaintext);
+  try {
+    const key = await getVaultKey();
+    const plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: fromBase64(ivB64) },
+      key,
+      fromBase64(ctB64)
+    );
+    return textDecoder.decode(plaintext);
+  } catch (err: any) {
+    await clearStoredKey();
+    const key = await getVaultKey();
+    const plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: fromBase64(ivB64) },
+      key,
+      fromBase64(ctB64)
+    );
+    return textDecoder.decode(plaintext);
+  }
 }
