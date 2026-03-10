@@ -13,48 +13,87 @@
 
 ## 𝘖𝘷𝘦𝘳𝘷𝘪𝘦𝘸
 
-**CryptiQ 2.0** is a post-quantum-ready secure messaging platform and reference build that pairs a hardened Flask API with a sleek, Apple-inspired client.
+**CryptiQ 2.0** is a post-quantum-ready secure messaging platform and reference implementation that pairs a Flask API with a sleek dark-mode client designed for practical demos.
 
-This version supports two modes for secure key exchange:
+This version was rebuilt around a usable demo story:
 
 * **Tier 1 (Manual share)**
-  Room keys are generated client-side and shared out-of-band. This always works and is the default demo flow.
+  A room key is generated client-side, shared out-of-band, and never sent to the server. This is the primary production-style demo flow and works across modern browsers.
 
 * **Tier 2 (PQC demo mode)**
-  On supported browsers, room keys can be shared using ML-KEM envelopes (PQC mode).
+  On supported Chromium browsers, room keys can also be shared through ML-KEM envelopes backed by WebAssembly. This is an explicit demo path for post-quantum key distribution.
+
+---
+
+## 𝘞𝘩𝘢𝘵 𝘊𝘩𝘢𝘯𝘨𝘦𝘥 𝘪𝘯 2.0
+
+CryptiQ 2.0 is not just a visual refresh. The app was updated to be substantially more usable and more coherent as a PQC portfolio project:
+
+* **Full room-based encrypted chat flow**
+  Users can create rooms, join rooms, generate room keys, share secure links, and exchange encrypted messages with automatic decryption once the correct key is present.
+
+* **Deterministic cross-device room key derivation**
+  The room key flow now works correctly across devices. If two clients have the same room key for the same room, they derive the same AES-GCM key and can decrypt each other's messages.
+
+* **Clear dual-path demo story**
+  Manual key sharing is the default path. PQC sharing is now framed as an advanced demo mode rather than the only path.
+
+* **Professional interface redesign**
+  The frontend was redesigned with a darker enterprise palette, SF-like system typography, liquid gradient background, better mobile spacing, and cleaner room controls.
+
+* **Live room behavior**
+  The client supports message streaming and a polling fallback, so new messages appear automatically even when browser SSE behavior is inconsistent.
+
+* **Deployment-ready stack**
+  The frontend is configured for Vercel deployment and the backend is configured for an external Flask host.
 
 ---
 
 ## 𝘋𝘦𝘮𝘰 𝘍𝘭𝘰𝘸 (𝘛𝘦𝘴𝘵𝘪𝘯𝘨)
 
-**Tier 1 (Manual share, recommended for all browsers)**
+**Tier 1 (Manual share, recommended)**
 
-1. Create a room and generate a key in the Room Key Vault.
-2. Click **Copy Secure Link** and send it over a separate channel (Signal, iMessage, or in-person).
-3. On the second device, sign in, open the secure link, and the room will auto-join with the key loaded.
-4. Messages should decrypt immediately on both sides.
+1. Create a room.
+2. Click **Generate Key** in the Room Key Vault.
+3. Click **Copy Secure Link** or **Copy Key**.
+4. Share that secret over a separate secure channel such as Signal, iMessage, Proton Mail, or in person.
+5. On the second device, sign in and either open the secure link or paste the room key and click **Save Key**.
+6. Messages decrypt automatically once both clients hold the same room key.
 
 **Tier 2 (PQC demo, Chromium only)**
 
-1. Use Chrome, Edge, or Brave on both devices. Safari does not support X25519 (required for the demo).
-2. Both clients click **Enable PQC Demo** to register PQC keys.
-3. The sender clicks **Share via PQC** to post an ML-KEM envelope.
-4. The recipient clicks **Accept PQC Envelope** to unlock the room key and join.
-5. Send encrypted messages as normal.
+1. Use Chrome, Brave, or Edge on both devices.
+2. Both clients click **Enable PQC Demo** to register ephemeral PQC demo keys.
+3. Sender flow: click **Share via PQC**.
+4. Recipient flow: click **Accept PQC Envelope**.
+5. The recipient unlocks the room key and can immediately participate in the encrypted chat.
+
+**Browser support**
+
+* **Manual share**
+  Works in Safari, Chrome, Edge, and Brave.
+
+* **PQC demo**
+  Intended for Chromium browsers. Safari does not support the X25519 path required by the current browser-side PQC demo implementation.
+
+---
 
 ## 𝘒𝘦𝘺 𝘊𝘢𝘱𝘢𝘣𝘪𝘭𝘪𝘵𝘪𝘦𝘴
 
 * **Post-quantum alignment**
-  Uses modern naming (ML-KEM / ML-DSA) and supports PQC demos via WebAssembly.
+  Uses modern NIST-aligned terminology such as ML-KEM and ML-DSA in the product and documentation.
 
 * **Room-key encryption**
-  Room secrets never leave the client. Servers store ciphertext only.
+  Room secrets are created and retained on the client. The server stores ciphertext, nonce, membership metadata, and message timestamps only.
 
 * **Tiered key exchange**
-  Manual share always works. PQC mode is optional and gated by browser capability.
+  Manual room-key distribution is always available. PQC sharing is optional and explicit.
 
-* **Sleek, focused UI**
-  Dark mode, liquid gradients, and an enterprise-first aesthetic.
+* **Automatic room updates**
+  Rooms update through server-sent events with polling fallback for reliability.
+
+* **Polished dark-mode interface**
+  The UI is optimized for desktop and mobile and avoids the earlier juvenile look in favor of a more enterprise-focused presentation.
 
 ---
 
@@ -63,21 +102,23 @@ This version supports two modes for secure key exchange:
 ```text
 cryptiq/
 ├── backend/              Flask API and auth layer
-│   ├── app.py            REST API + JWT auth
-│   ├── db.py             SQLite models
+│   ├── app.py            REST API + JWT auth + room streams
+│   ├── db.py             SQLite models and schema
 │   └── requirements.txt  Python dependencies
 ├── frontend/             Next.js client application
 │   ├── app/              App Router UI
+│   ├── public/           Static assets + PQC wasm
+│   ├── scripts/          Build helpers
 │   └── package.json      Frontend dependencies
-└── README.md             Overview & setup
+└── README.md             Overview, flows, deployment, and setup
 ```
 
 Core concepts:
 
-* Backend Flask service for auth, rooms, and encrypted message storage
-* Client-side AES-GCM encryption with per-room secrets
-* NIST-aligned algorithm naming for PQC posture
-* Tiered key exchange for demos
+* Backend Flask service for auth, rooms, room membership, device key registration, PQC envelopes, and encrypted message storage
+* Client-side AES-GCM message encryption with a per-room secret
+* Optional ML-KEM envelope exchange for demonstration purposes
+* Shared room model designed for a concrete portfolio demo rather than a vague crypto showcase
 
 ---
 
@@ -86,14 +127,35 @@ Core concepts:
 **Backend**
 
 * Python + Flask
-* SQLite for fast local state
-* JWT auth with room membership
+* SQLite for lightweight state
+* JWT auth with room membership checks
+* SSE stream endpoint for near-real-time message delivery
 
 **Frontend**
 
 * Next.js + React
-* Web Crypto API (AES-GCM)
-* Optional PQC WebAssembly (ML-KEM)
+* Web Crypto API with AES-GCM
+* PBKDF2-derived room encryption keys
+* Optional browser-side PQC WebAssembly with ML-KEM
+
+**Deployment**
+
+* Vercel for frontend hosting
+* External Flask host for backend API
+
+---
+
+## 𝘋𝘦𝘱𝘭𝘰𝘺𝘦𝘥 𝘌𝘯𝘷𝘪𝘳𝘰𝘯𝘮𝘦𝘯𝘵
+
+Current deployment targets:
+
+* **Frontend**
+  `https://frontend-lovat-xi-33.vercel.app`
+
+* **Backend**
+  `https://cryptiq-illapex-d0a26100.koyeb.app`
+
+If you redeploy the frontend, ensure `NEXT_PUBLIC_API_BASE` points at the backend URL above or your replacement backend host.
 
 ---
 
@@ -127,43 +189,39 @@ Backend:  http://localhost:5000
 
 ---
 
-## 𝘛𝘦𝘴𝘵𝘪𝘯𝘨 𝘛𝘪𝘦𝘳 1 (Manual share)
+## 𝘓𝘰𝘤𝘢𝘭 𝘋𝘦𝘷 𝘕𝘰𝘵𝘦𝘴
 
-1. Create a room.
-2. Click **Generate key**, then **Save key**.
-3. Click **Copy secure link** and send it via another secure channel (Signal/iMessage/Proton).
-4. Recipient opens the link — key auto-loads, chat decrypts.
-
----
-
-## 𝘛𝘦𝘴𝘵𝘪𝘯𝘨 𝘛𝘪𝘦𝘳 2 (PQC demo)
-
-1. Open the room in a browser that supports PQC demo mode.
-2. Click **Enable PQC demo**.
-3. On the sender side, click **Share via PQC**.
-4. On the recipient side, click **Accept PQC envelope**.
-
-If the browser does not support PQC demo mode, the UI will indicate this and fall back to manual sharing.
+* Room keys are device-local and should be shared intentionally during testing
+* Older messages created before the deterministic room-key fix may not decrypt correctly in previously used rooms
+* For the cleanest demo, create a fresh room after pulling the latest changes
+* If PQC demo mode was tested before the latest key-handling fix, use **Reset PQC Keys** before re-enabling it
 
 ---
 
 ## 𝘚𝘦𝘤𝘶𝘳𝘪𝘵𝘺 𝘔𝘰𝘥𝘦𝘭
 
-CryptiQ focuses on the following security properties:
+CryptiQ 2.0 currently focuses on these security properties:
 
 * Client-held room keys
 * AES-GCM encryption for message payloads
-* JWT-secured API access and room membership checks
-* Server stores only ciphertext, nonce, and metadata
-* Optional PQC demo mode for ML-KEM envelope exchange
+* JWT-secured API access and room membership enforcement
+* Server stores only ciphertext, nonces, and room metadata
+* Manual out-of-band key delivery as the primary usable model
+* Optional PQC envelope exchange as a separate demonstration path
+
+Important limitation:
+
+* The current PQC mode is a browser-side demonstration layer, not a full audited end-to-end production PQC system
 
 ---
 
 ## 𝘙𝘰𝘢𝘥𝘮𝘢𝘱
 
-* QR code sharing for room links
-* Optional hardware-backed key storage
-* Full liboqs integration on backend
+* QR code room sharing for mobile demos
+* Cleaner advanced-mode separation for PQC controls
+* Full backend liboqs integration where available
+* Better persistence and multi-device identity handling
+* Optional hardware-backed local key storage
 
 ---
 
