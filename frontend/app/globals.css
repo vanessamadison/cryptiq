@@ -1,18 +1,18 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
 :root {
   color-scheme: dark;
-  --bg: #0a0b0f;
-  --bg-elev: #11131a;
-  --bg-glass: rgba(18, 22, 32, 0.78);
-  --border: rgba(120, 132, 155, 0.24);
-  --text: #f4f6fb;
-  --muted: #a2a9b8;
-  --accent: #77d9ff;
-  --accent-2: #93a4ff;
+  --bg: #07090d;
+  --bg-elev: rgba(13, 16, 24, 0.9);
+  --bg-glass: rgba(10, 13, 20, 0.75);
+  --border: rgba(148, 163, 184, 0.18);
+  --text: #f5f7fb;
+  --muted: #9aa4b2;
+  --accent: #7cf0ff;
+  --accent-2: #9aa8ff;
   --danger: #ff6b6b;
   --success: #6bff95;
-  --shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  --shadow: 0 28px 70px rgba(2, 4, 10, 0.6);
 }
 
 * {
@@ -27,7 +27,7 @@ body {
   min-height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 body {
@@ -35,11 +35,34 @@ body {
   min-height: 100dvh;
   background-color: var(--bg);
   background-image:
-    radial-gradient(circle at 15% 15%, rgba(122, 167, 255, 0.12), transparent 50%),
-    radial-gradient(circle at 85% 25%, rgba(119, 217, 255, 0.1), transparent 45%),
-    radial-gradient(circle at 50% 85%, rgba(147, 164, 255, 0.1), transparent 55%);
+    radial-gradient(circle at 12% 18%, rgba(124, 240, 255, 0.18), transparent 45%),
+    radial-gradient(circle at 80% 20%, rgba(154, 168, 255, 0.18), transparent 42%),
+    radial-gradient(circle at 50% 85%, rgba(124, 240, 255, 0.12), transparent 55%);
   background-repeat: no-repeat;
   background-size: cover;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::before {
+  background: linear-gradient(180deg, rgba(7, 9, 13, 0.2) 0%, rgba(7, 9, 13, 0.85) 65%, rgba(7, 9, 13, 0.98) 100%);
+}
+
+body::after {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(124, 240, 255, 0.08), transparent 55%),
+    radial-gradient(circle at 85% 60%, rgba(154, 168, 255, 0.08), transparent 50%);
+  mix-blend-mode: screen;
+  opacity: 0.7;
 }
 
 a {
@@ -54,16 +77,17 @@ textarea {
 }
 
 main {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 24px calc(80px + env(safe-area-inset-bottom));
+  padding: 40px 24px calc(72px + env(safe-area-inset-bottom));
   width: 100%;
   flex: 1;
 }
@@ -77,16 +101,16 @@ main {
 
 .brand {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .brand-text {
   font-size: 0.95rem;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.28em;
 }
 
 .hero {
@@ -99,23 +123,23 @@ main {
 
 .hero-card {
   padding: 32px;
-  border-radius: 24px;
+  border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--bg-glass);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(24px);
+  backdrop-filter: blur(18px);
   animation: floatIn 700ms ease both;
 }
 
 .hero-title {
-  font-size: clamp(2.2rem, 3.6vw, 3.6rem);
+  font-size: clamp(2.2rem, 3.4vw, 3.5rem);
   line-height: 1.05;
   margin-bottom: 20px;
 }
 
 .hero-subtitle {
   color: var(--muted);
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   line-height: 1.7;
 }
 
@@ -127,66 +151,67 @@ main {
 }
 
 .button {
-  padding: 12px 20px;
-  border-radius: 14px;
-  border: 1px solid rgba(147, 164, 255, 0.6);
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #07090f;
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(154, 168, 255, 0.45);
+  background: linear-gradient(135deg, rgba(124, 240, 255, 0.9), rgba(154, 168, 255, 0.95));
+  color: #05070c;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
 .button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(119, 217, 255, 0.18);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(124, 240, 255, 0.2);
 }
 
 .button.secondary {
-  background: transparent;
+  background: rgba(10, 13, 20, 0.6);
   border-color: var(--border);
   color: var(--text);
 }
 
 .grid {
   display: grid;
-  gap: 20px;
+  gap: 18px;
 }
 
 .panel {
-  padding: 24px;
-  border-radius: 18px;
+  padding: 22px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--bg-elev);
+  box-shadow: 0 16px 40px rgba(2, 4, 10, 0.4);
   animation: floatIn 700ms ease both;
 }
 
 .panel h3 {
   margin-bottom: 12px;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 
 .meta {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.85rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.82rem;
   color: var(--muted);
 }
 
 .form {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .input {
   padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(12, 15, 24, 0.7);
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(7, 9, 13, 0.7);
   color: var(--text);
 }
 
 .input::placeholder {
-  color: rgba(162, 169, 184, 0.7);
+  color: rgba(154, 168, 255, 0.5);
 }
 
 .split {
@@ -197,7 +222,7 @@ main {
 
 .chat-layout {
   display: grid;
-  grid-template-columns: minmax(240px, 280px) 1fr;
+  grid-template-columns: minmax(240px, 300px) 1fr;
   gap: 20px;
 }
 
@@ -215,9 +240,9 @@ main {
 
 .message-list {
   padding: 16px;
-  border-radius: 16px;
+  border-radius: 12px;
   border: 1px solid var(--border);
-  background: rgba(12, 15, 24, 0.6);
+  background: rgba(8, 10, 16, 0.7);
   overflow-y: auto;
   display: grid;
   gap: 12px;
@@ -225,14 +250,14 @@ main {
 
 .message {
   padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(119, 217, 255, 0.08);
-  border: 1px solid rgba(119, 217, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(124, 240, 255, 0.08);
+  border: 1px solid rgba(124, 240, 255, 0.2);
 }
 
 .message.you {
-  background: rgba(147, 164, 255, 0.16);
-  border-color: rgba(147, 164, 255, 0.32);
+  background: rgba(154, 168, 255, 0.15);
+  border-color: rgba(154, 168, 255, 0.3);
 }
 
 .message .meta {
@@ -243,16 +268,16 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(119, 217, 255, 0.08);
-  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(124, 240, 255, 0.25);
+  background: rgba(124, 240, 255, 0.08);
+  font-size: 0.8rem;
 }
 
 .notice {
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 107, 107, 0.3);
   background: rgba(255, 107, 107, 0.08);
   color: #ffc9c9;
@@ -261,7 +286,7 @@ main {
 @keyframes floatIn {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -295,7 +320,7 @@ main {
 
 @media (max-width: 600px) {
   .container {
-    padding: 28px 18px 64px;
+    padding: 28px 18px calc(60px + env(safe-area-inset-bottom));
   }
   .hero-title {
     font-size: 2rem;
