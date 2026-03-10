@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch, getApiBase, getToken } from "../../lib/api";
 import { decryptMessage, deriveRoomKey, encryptMessage } from "../../lib/crypto";
 import { createEnvelope, openEnvelope, isHybridSupported } from "../../lib/hybrid";
-import { ensureDeviceKeys, getPrivateKeys, getPublicKeys } from "../../lib/device";
+import { ensureDeviceKeys, getPrivateKeys } from "../../lib/device";
 import { unwrapSecret, wrapSecret } from "../../lib/vault";
+import { buildRoomLink, copyText } from "../../lib/share";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ const roomKeyStorage = (roomId: string) => `cryptiq_room_key_wrapped_${roomId}`;
 export default function RoomPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const roomId = params.id as string;
 
   const [roomKeyInput, setRoomKeyInput] = useState("");
@@ -33,9 +35,11 @@ export default function RoomPage() {
     { id: number; sender: string; body: string; created_at: string }[]
   >([]);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<{ id: string; display_name: string } | null>(null);
   const [hybridSupported, setHybridSupported] = useState(true);
+  const [shareVisible, setShareVisible] = useState(false);
   const lastIdRef = useRef(0);
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -56,6 +60,15 @@ export default function RoomPage() {
   useEffect(() => {
     const loadRoomKey = async () => {
       if (typeof window === "undefined") return;
+      const queryKey = searchParams.get("key");
+      if (queryKey) {
+        const wrapped = await wrapSecret(queryKey);
+        window.localStorage.setItem(roomKeyStorage(roomId), wrapped);
+        setRoomKey(queryKey);
+        setRoomKeyInput("");
+        setNotice("Room key loaded from secure link.");
+        return;
+      }
       const wrapped = window.localStorage.getItem(roomKeyStorage(roomId));
       if (wrapped) {
         try {
@@ -68,7 +81,7 @@ export default function RoomPage() {
       }
     };
     loadRoomKey();
-  }, [roomId]);
+  }, [roomId, searchParams]);
 
   useEffect(() => {
     const checkHybrid = async () => {
@@ -149,8 +162,7 @@ export default function RoomPage() {
   }, [roomKey]);
 
   useEffect(() => {
-    if (roomKey) return;
-    if (!hybridSupported) return;
+    if (roomKey || !hybridSupported) return;
     handleCheckEnvelopes();
     const timer = setInterval(handleCheckEnvelopes, 6000);
     return () => clearInterval(timer);
@@ -158,9 +170,10 @@ export default function RoomPage() {
 
   const handleSaveKey = async () => {
     if (!roomKeyInput.trim()) return;
-    const wrapped = await wrapSecret(roomKeyInput.trim());
+    const value = roomKeyInput.trim();
+    const wrapped = await wrapSecret(value);
     window.localStorage.setItem(roomKeyStorage(roomId), wrapped);
-    setRoomKey(roomKeyInput.trim());
+    setRoomKey(value);
     setRoomKeyInput("");
     setError(null);
   };
@@ -193,6 +206,19 @@ export default function RoomPage() {
     setPlainMessages([]);
   };
 
+  const handleCopyKey = async () => {
+    if (!roomKey) return;
+    await copyText(roomKey);
+    setNotice("Room key copied. Share via a secure channel.");
+  };
+
+  const handleCopyLink = async () => {
+    if (!roomKey) return;
+    const link = buildRoomLink(roomId, roomKey);
+    await copyText(link);
+    setNotice("Secure link copied.");
+  };
+
   const handleShareKey = async () => {
     if (!roomKey) return;
     setError(null);
@@ -219,6 +245,7 @@ export default function RoomPage() {
           method: "POST",
           body: JSON.stringify({ envelopes }),
         });
+        setNotice("Room key shared via hybrid envelope.");
       }
     } catch (err: any) {
       if (err.message === "hybrid_unsupported") {
@@ -257,7 +284,7 @@ export default function RoomPage() {
       window.localStorage.setItem(roomKeyStorage(roomId), wrapped);
       setRoomKey(recovered);
     } catch (err: any) {
-      if (err?.message === "hybrid_unsupported") {
+      if (err.message === "hybrid_unsupported") {
         setHybridSupported(false);
         return;
       }
@@ -268,6 +295,31 @@ export default function RoomPage() {
   };
 
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const shareActions = useMemo(() => {
+    if (!roomKey) return null;
+    return (
+      <div className="form" style={{ marginTop: 16 }}>
+        <button className="button" onClick={handleCopyKey}>
+          Copy room key
+        </button>
+        <button className="button secondary" onClick={handleCopyLink}>
+          Copy secure link
+        </button>
+        <button className="button secondary" onClick={() => setShareVisible((v) => !v)}>
+          {shareVisible ? "Hide instructions" : "Show sharing guide"}
+        </button>
+        {shareVisible && (
+          <div className="panel" style={{ marginTop: 12 }}>
+            <p className="hero-subtitle">
+              Share the room key or secure link using a separate secure channel (Signal, iMessage, or in-person QR).
+              The server never sees the key.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }, [roomKey, shareVisible]);
 
   return (
     <div className="container">
@@ -303,6 +355,7 @@ export default function RoomPage() {
               </button>
             </div>
             {roomKey && <div className="badge" style={{ marginTop: 16 }}>Key unlocked</div>}
+            {shareActions}
           </div>
           <div className="panel">
             <h3>Hybrid key share</h3>
@@ -351,6 +404,7 @@ export default function RoomPage() {
                 {loading ? "Sending" : "Send"}
               </button>
             </div>
+            {notice && <div className="badge" style={{ marginTop: 12 }}>{notice}</div>}
             {error && <div className="notice" style={{ marginTop: 12 }}>{error}</div>}
           </div>
         </section>
