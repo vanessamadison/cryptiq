@@ -1,15 +1,15 @@
-@import url("https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
 
 :root {
   color-scheme: dark;
   --bg: #0a0b0f;
   --bg-elev: #11131a;
-  --bg-glass: rgba(18, 22, 32, 0.75);
+  --bg-glass: rgba(18, 22, 32, 0.78);
   --border: rgba(120, 132, 155, 0.24);
   --text: #f4f6fb;
   --muted: #a2a9b8;
-  --accent: #5af4c8;
-  --accent-2: #7aa7ff;
+  --accent: #77d9ff;
+  --accent-2: #93a4ff;
   --danger: #ff6b6b;
   --success: #6bff95;
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
@@ -26,14 +26,14 @@ body {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: "Sora", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 body {
   background-image:
-    radial-gradient(circle at 15% 20%, rgba(122, 167, 255, 0.12), transparent 45%),
-    radial-gradient(circle at 85% 20%, rgba(90, 244, 200, 0.1), transparent 40%),
-    radial-gradient(circle at 50% 80%, rgba(90, 244, 200, 0.08), transparent 55%);
+    radial-gradient(circle at 15% 15%, rgba(122, 167, 255, 0.12), transparent 50%),
+    radial-gradient(circle at 85% 25%, rgba(119, 217, 255, 0.1), transparent 45%),
+    radial-gradient(circle at 50% 85%, rgba(147, 164, 255, 0.1), transparent 55%);
 }
 
 a {
@@ -66,23 +66,16 @@ main {
 
 .brand {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.brand-badge {
-  width: 44px;
-  height: 44px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  background: linear-gradient(145deg, rgba(90, 244, 200, 0.22), rgba(122, 167, 255, 0.18));
-  display: grid;
-  place-items: center;
-  font-family: "IBM Plex Mono", monospace;
-  font-weight: 500;
+.brand-text {
+  font-size: 0.95rem;
+  letter-spacing: 0.2em;
 }
 
 .hero {
@@ -95,7 +88,7 @@ main {
 
 .hero-card {
   padding: 32px;
-  border-radius: 28px;
+  border-radius: 24px;
   border: 1px solid var(--border);
   background: var(--bg-glass);
   box-shadow: var(--shadow);
@@ -104,7 +97,7 @@ main {
 }
 
 .hero-title {
-  font-size: clamp(2.4rem, 4vw, 4rem);
+  font-size: clamp(2.2rem, 3.6vw, 3.6rem);
   line-height: 1.05;
   margin-bottom: 20px;
 }
@@ -124,8 +117,8 @@ main {
 
 .button {
   padding: 12px 20px;
-  border-radius: 999px;
-  border: 1px solid transparent;
+  border-radius: 14px;
+  border: 1px solid rgba(147, 164, 255, 0.6);
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: #07090f;
   font-weight: 600;
@@ -135,7 +128,7 @@ main {
 
 .button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(90, 244, 200, 0.2);
+  box-shadow: 0 12px 30px rgba(119, 217, 255, 0.18);
 }
 
 .button.secondary {
@@ -151,7 +144,7 @@ main {
 
 .panel {
   padding: 24px;
-  border-radius: 20px;
+  border-radius: 18px;
   border: 1px solid var(--border);
   background: var(--bg-elev);
   animation: floatIn 700ms ease both;
@@ -222,8 +215,36 @@ main {
 .message {
   padding: 12px 14px;
   border-radius: 14px;
-  background: rgba(90, 244, 200, 0.08);
-  border: 1px solid rgba(90, 244, 200, 0.2);
+  background: rgba(119, 217, 255, 0.08);
+  border: 1px solid rgba(119, 217, 255, 0.22);
+}
+
+.message.you {
+  background: rgba(147, 164, 255, 0.16);
+  border-color: rgba(147, 164, 255, 0.32);
+}
+
+.message .meta {
+  margin-bottom: 6px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(119, 217, 255, 0.08);
+  font-size: 0.85rem;
+}
+
+.notice {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  background: rgba(255, 107, 107, 0.08);
+  color: #ffc9c9;
 }
 
 @keyframes floatIn {
@@ -237,39 +258,26 @@ main {
   }
 }
 
-.message.you {
-  background: rgba(122, 167, 255, 0.12);
-  border-color: rgba(122, 167, 255, 0.3);
-}
-
-.message .meta {
-  margin-bottom: 6px;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(90, 244, 200, 0.08);
-  font-size: 0.85rem;
-}
-
-.notice {
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 107, 107, 0.3);
-  background: rgba(255, 107, 107, 0.08);
-  color: #ffc9c9;
-}
-
 @media (max-width: 900px) {
   .chat-layout {
     grid-template-columns: 1fr;
   }
   .chat-window {
     height: auto;
+  }
+  .nav {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .cta-row {
+    width: 100%;
+  }
+  .button {
+    width: 100%;
+    text-align: center;
+  }
+  .hero-card {
+    padding: 24px;
   }
 }

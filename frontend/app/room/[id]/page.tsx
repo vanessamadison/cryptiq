@@ -237,11 +237,8 @@ export default function RoomPage() {
     <div className="container">
       <nav className="nav">
         <Link className="brand" href="/chat">
-          <div className="brand-badge">CQ</div>
-          <div>
-            <div>CryptiQ Room</div>
-            <div className="meta">{roomId}</div>
-          </div>
+          <div className="brand-text">CryptiQ Room</div>
+          <div className="meta">{roomId}</div>
         </Link>
         <div className="cta-row">
           <button className="button secondary" onClick={handleLock}>

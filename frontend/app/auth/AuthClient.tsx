@@ -43,11 +43,8 @@ export default function AuthClient() {
     <div className="container">
       <nav className="nav">
         <Link className="brand" href="/">
-          <div className="brand-badge">CQ</div>
-          <div>
-            <div>CryptiQ 2.0</div>
-            <div className="meta">Secure Identity</div>
-          </div>
+          <div className="brand-text">CryptiQ 2.0</div>
+          <div className="meta">Secure Identity</div>
         </Link>
         <div className="cta-row">
           <Link className="button secondary" href={isRegister ? "/auth" : "/auth?mode=register"}>

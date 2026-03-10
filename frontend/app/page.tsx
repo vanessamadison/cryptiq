@@ -5,11 +5,8 @@ export default function HomePage() {
     <div className="container">
       <nav className="nav">
         <div className="brand">
-          <div className="brand-badge">CQ</div>
-          <div>
-            <div>CryptiQ 2.0</div>
-            <div className="meta">Post-Quantum Secure Messaging</div>
-          </div>
+          <div className="brand-text">CryptiQ 2.0</div>
+          <div className="meta">Post-Quantum Secure Messaging</div>
         </div>
         <div className="cta-row">
           <Link className="button secondary" href="/auth">

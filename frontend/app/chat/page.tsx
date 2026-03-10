@@ -85,11 +85,8 @@ export default function ChatPage() {
     <div className="container">
       <nav className="nav">
         <Link className="brand" href="/">
-          <div className="brand-badge">CQ</div>
-          <div>
-            <div>CryptiQ 2.0</div>
-            <div className="meta">Secure Rooms</div>
-          </div>
+          <div className="brand-text">CryptiQ 2.0</div>
+          <div className="meta">Secure Rooms</div>
         </Link>
         <div className="cta-row">
           <button className="button secondary" onClick={handleSignOut}>
