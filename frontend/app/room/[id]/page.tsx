@@ -102,7 +102,7 @@ export default function RoomPage() {
     const token = getToken();
     const es = new EventSource(
       `${getApiBase()}/api/rooms/${roomId}/stream?last_id=${lastIdRef.current}&token=${encodeURIComponent(
-        token || \"\"
+        token || ""
       )}`,
       { withCredentials: false }
     );
